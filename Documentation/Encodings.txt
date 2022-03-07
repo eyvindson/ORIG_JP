@@ -1,0 +1,33 @@
+This file describes the numerical encodings used in the Luke GHG inventory
+
+Region:
+1 - Southern Finland
+2 - Northern Finland
+SF - Southern Finland
+NF - Northern Finland
+
+FRA - forest research asssessment (latvuspeittävyys > 10%)
+1 - FL
+2 - Avosuo
+3 - Avosuo
+
+
+Peatland type
+
+1 - Rhtkg, Herb-rich type
+2 - Mtkg (Types I & II combined), Vaccinium myrtillus (blueberry) type
+4 - Ptkg (Types I & II combined), Vaccinium vitis-idaea (lingonberry) type
+6 - Vatkg, Dwarf shrub type
+7 - Jatkg, Lichen type
+
+Litter types
+
+nwl - non-woody litter
+fwl - fine woody litter
+cwl - coarse woody litter
+
+Tree types
+
+1 - pine
+2 - spruce
+3 - deiciduous

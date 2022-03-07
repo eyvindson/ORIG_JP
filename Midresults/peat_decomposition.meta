@@ -1,0 +1,12 @@
+Param;Description
+datafile;C:/Users/03180980/luke-peatland/Midresults/peat_decomposition.csv
+description;Calculated peat decomposition type divided by region and peatland type
+source;Calculated based on basal area data and weather data
+author;N/A
+citation;N/A
+notes;N/A
+FIELD:region;Region of Finland
+FIELD:year;Year
+FIELD:peat_type;Peatland type coded numerically
+FIELD:peat_name;Peatland type code, see documentation for further information
+FIELD:peat_deg;Degradation of peat, in tons of C per ha per year

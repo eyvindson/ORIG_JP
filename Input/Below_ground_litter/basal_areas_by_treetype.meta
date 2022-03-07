@@ -1,0 +1,12 @@
+Param;Description
+datafile;C:/Users/03180980/OneDrive - Valtion/R/Peatlands/Input/Underground_litter/basal_area_by_treetype.csv
+description;Basal area of trees by tree class, region and peatland type
+source;G:\Luke\GHG\ghgi\development\turvemaat\turvemaiden uudet CO2 kertoimet\VMI datasta\tkg_ppa_ep_VMI9-12.xlsx
+author;N/A
+citation;N/A
+notes;Based on calculation. Note that data is missing from <1998 in the South, and < 2002 in the North. Oldest values repeated prior to that.
+FIELD:region;Region of Finland
+FIELD:peat_code;Peatland type coded numerically, see Documentation
+FIELD:tree_type;Tree type
+FIELD:year;Year
+FIELD:basal_area;Tree basal area in ha/m2

@@ -1,0 +1,11 @@
+Param;Description
+datafile;C:/Users/03180980/OneDrive - Valtion/R/Peatlands/Input/basal_areas.csv
+description;Mean basal areas of trees from Southern and Northern Finland, divided to peatland types
+source;See file G:/Luke/GHG/ghgi/development/turvemaat/turvemaiden uudet CO2 kertoimet/VMI datasta/Uudet_ppat_vmi8-9-11-12_04032021.xlsx
+notes;N/A
+author;N/A
+citation;N/A
+FIELD:region;Region of Finland 
+FIELD:peat_type;Peatland type see Documentation for details
+FIELD:year;Sampling year
+FIELD:basal_area;Mean basal area of trees, m2/ha

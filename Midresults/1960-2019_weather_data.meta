@@ -1,0 +1,10 @@
+Param;Description
+datafile;C:/Users/03180980/luke-peatland/Midresults/1960-2019_weather_data.csv
+description;Aggregated weather data from 1960-2019
+source;FMI / Luke DB
+author;N/A
+citation;N/A
+notes;N/A
+FIELD:region;Region of Finland as defined by a shapefile
+FIELD:mean_T;Mean monhtly temperature in C
+FIELD:mean_prec;Mean monthly precipitation in mm

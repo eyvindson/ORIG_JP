@@ -1,0 +1,71 @@
+Region;Peatland forest type;Biomass component;1990;2000;2010;2016
+Southern Finland;Herb rich type (Rhtkg);Bark;6,2;7,1;7,5;7,8
+Southern Finland;Herb rich type (Rhtkg);Dead brances;1,3;1,4;1,4;1,8
+Southern Finland;Herb rich type (Rhtkg);Foliage;6,3;7,1;7,5;7,1
+Southern Finland;Herb rich type (Rhtkg);Live branches;12,3;13,8;14,6;13,6
+Southern Finland;Herb rich type (Rhtkg);Roots;16,2;18,8;19,8;20,7
+Southern Finland;Herb rich type (Rhtkg);Stemwood;44,7;52,5;56,3;58,3
+Southern Finland;Herb rich type (Rhtkg);Stumps;4,6;5,3;5,6;5,7
+Southern Finland;Vaccinium myrtillus type (Mtkg);Bark;6,3;6,3;6,7;6,9
+Southern Finland;Vaccinium myrtillus type (Mtkg);Dead brances;1,5;1,7;1,8;2,0
+Southern Finland;Vaccinium myrtillus type (Mtkg);Foliage;7,0;6,5;7,2;6,5
+Southern Finland;Vaccinium myrtillus type (Mtkg);Live branches;12,7;12,5;13,3;12,3
+Southern Finland;Vaccinium myrtillus type (Mtkg);Roots;17,2;18,1;19,2;19,4
+Southern Finland;Vaccinium myrtillus type (Mtkg);Stemwood;47,2;50,6;56,0;56,7
+Southern Finland;Vaccinium myrtillus type (Mtkg);Stumps;4,8;5,2;5,4;5,4
+Southern Finland;V. vitis-idaea type (Ptkg);Bark;3,8;4,5;4,8;4,9
+Southern Finland;V. vitis-idaea type (Ptkg);Dead brances;1,1;1,5;1,6;1,8
+Southern Finland;V. vitis-idaea type (Ptkg);Foliage;3,6;3,9;4,2;3,9
+Southern Finland;V. vitis-idaea type (Ptkg);Live branches;7,3;8,5;9,2;8,6
+Southern Finland;V. vitis-idaea type (Ptkg);Roots;9,8;12,3;14,0;14,0
+Southern Finland;V. vitis-idaea type (Ptkg);Stemwood;29,5;37,8;44,9;46,6
+Southern Finland;V. vitis-idaea type (Ptkg);Stumps;3,2;3,9;4,5;4,3
+Southern Finland;Dwarf shrub type (Vatkg);Bark;2,2;2,9;3,3;3,3
+Southern Finland;Dwarf shrub type (Vatkg);Dead brances;0,7;1,1;1,3;1,4
+Southern Finland;Dwarf shrub type (Vatkg);Foliage;2,1;2,5;2,6;2,5
+Southern Finland;Dwarf shrub type (Vatkg);Live branches;4,2;5,3;6,0;5,9
+Southern Finland;Dwarf shrub type (Vatkg);Roots;4,4;6,3;7,8;8,5
+Southern Finland;Dwarf shrub type (Vatkg);Stemwood;14,2;20,7;26,5;29,0
+Southern Finland;Dwarf shrub type (Vatkg);Stumps;1,7;2,3;2,8;2,9
+Southern Finland;Cladonia type (Jatkg);Bark;1,4;1,2;1,9;1,9
+Southern Finland;Cladonia type (Jatkg);Dead brances;0,5;0,5;0,8;0,8
+Southern Finland;Cladonia type (Jatkg);Foliage;1,5;1,1;1,6;1,5
+Southern Finland;Cladonia type (Jatkg);Live branches;2,6;2,3;3,4;3,1
+Southern Finland;Cladonia type (Jatkg);Roots;2,2;2,1;3,6;3,5
+Southern Finland;Cladonia type (Jatkg);Stemwood;7,1;6,6;11,8;11,6
+Southern Finland;Cladonia type (Jatkg);Stumps;0,9;0,8;1,4;1,3
+Northern Finland;Herb rich type (Rhtkg);Bark;4,8;5,2;5,7;5,7
+Northern Finland;Herb rich type (Rhtkg);Dead brances;0,9;0,9;1,1;1,4
+Northern Finland;Herb rich type (Rhtkg);Foliage;3,9;4,6;5,7;5,1
+Northern Finland;Herb rich type (Rhtkg);Live branches;8,2;9,6;11,3;10,8
+Northern Finland;Herb rich type (Rhtkg);Roots;10,3;12,4;14,5;14,6
+Northern Finland;Herb rich type (Rhtkg);Stemwood;23,9;30,6;37,0;37,2
+Northern Finland;Herb rich type (Rhtkg);Stumps;3,2;3,7;4,3;4,5
+Northern Finland;Vaccinium myrtillus type (Mtkg);Bark;3,9;4,5;5,2;6,0
+Northern Finland;Vaccinium myrtillus type (Mtkg);Dead brances;0,8;1,1;1,4;1,8
+Northern Finland;Vaccinium myrtillus type (Mtkg);Foliage;3,4;4,5;5,9;5,7
+Northern Finland;Vaccinium myrtillus type (Mtkg);Live branches;6,7;8,7;11,0;11,0
+Northern Finland;Vaccinium myrtillus type (Mtkg);Roots;8,9;11,4;14,0;16,3
+Northern Finland;Vaccinium myrtillus type (Mtkg);Stemwood;21,0;28,2;36,2;43,5
+Northern Finland;Vaccinium myrtillus type (Mtkg);Stumps;2,7;3,5;4,1;4,7
+Northern Finland;V. vitis-idaea type (Ptkg);Bark;2,3;2,8;3,4;3,9
+Northern Finland;V. vitis-idaea type (Ptkg);Dead brances;0,7;0,9;1,1;1,4
+Northern Finland;V. vitis-idaea type (Ptkg);Foliage;2,1;2,7;3,3;3,4
+Northern Finland;V. vitis-idaea type (Ptkg);Live branches;4,2;5,4;6,7;7,2
+Northern Finland;V. vitis-idaea type (Ptkg);Roots;4,7;6,4;8,4;9,9
+Northern Finland;V. vitis-idaea type (Ptkg);Stemwood;12,7;17,4;23,8;29,2
+Northern Finland;V. vitis-idaea type (Ptkg);Stumps;1,6;2,2;2,9;3,3
+Northern Finland;Dwarf shrub type (Vatkg);Bark;1,4;1,7;2,3;2,4
+Northern Finland;Dwarf shrub type (Vatkg);Dead brances;0,5;0,7;0,9;1,0
+Northern Finland;Dwarf shrub type (Vatkg);Foliage;1,4;1,6;2,0;2,0
+Northern Finland;Dwarf shrub type (Vatkg);Live branches;2,6;3,1;4,3;4,3
+Northern Finland;Dwarf shrub type (Vatkg);Roots;2,5;3,2;4,7;5,2
+Northern Finland;Dwarf shrub type (Vatkg);Stemwood;6,9;9,0;14,1;16,3
+Northern Finland;Dwarf shrub type (Vatkg);Stumps;1,0;1,2;1,8;1,9
+Northern Finland;Cladonia type (Jatkg);Bark;3,0;1,1;1,6;2,3
+Northern Finland;Cladonia type (Jatkg);Dead brances;1,0;0,5;0,7;0,6
+Northern Finland;Cladonia type (Jatkg);Foliage;2,2;0,8;1,4;0,9
+Northern Finland;Cladonia type (Jatkg);Live branches;3,0;1,3;2,7;3,5
+Northern Finland;Cladonia type (Jatkg);Roots;2,7;1,3;2,8;6,6
+Northern Finland;Cladonia type (Jatkg);Stemwood;10,1;4,5;7,6;5,4
+Northern Finland;Cladonia type (Jatkg);Stumps;1,2;0,5;1,1;3,6

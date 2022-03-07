@@ -1,0 +1,11 @@
+Param;Description
+datafile;C:/Users/03180980/OneDrive - Valtion/R/Peatlands/Input/Underground_litter/peatland_proportional_area.csv
+description;The proportional area of the different peatland types
+source;LUKE GHG inventory
+author;N/A
+citation;N/A
+notes;
+FIELD:region;Region of Finland
+FIELD:peat_type;Encoded peatland type, see documentation
+FIELD:year;Year
+FIELD:proportional_area;Proportional peatland area %

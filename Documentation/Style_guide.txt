@@ -1,0 +1,147 @@
+General style guide to be used with the peatland forests project
+****************************************************************
+Last updated 17.9.2021, by JPM
+
+1. General
+	* English (US) is the preferred language for all parts of code (e.g. variables, functions etc.) 
+	and documentation.
+	
+	* Whenever new data are introduced, something is calculated or data are exported,
+	mention units used in the data, or make these metadata easily available.
+	
+	* Always stay DRY (Don't Repeat Yourself) when possible. If some parts of code require repeating, 
+	write a generalized function and refer to it.
+	
+	* Always make sure your code is readable to others: use clear and concise variable names, 
+	break code to multiple rows when it helps legibility, use indentation and spaces at appropriate places.
+	Usually it's much better to be clear than "efficient".
+	
+	* Break the code into logical elements. Meaning a single script file should only contain one specific
+	functionality. Keep the script files short and self-contained.
+	
+	* It's much better to comment the code too much, rather than too little. Write discrete documentation files
+	where appropriate. Sometimes it might be advisable to also comment why a specific approach was taken.
+	
+	* The guiding design philosophy is a "black box" approach, meaning that input data and other parameters are 
+	defined separately, which are read by the script files, which finally output the results. At no point should 
+	the user be required to edit the script files directly under normal operation. 	
+		-> Avoid hardcoding! Do not include direct references to specific file names, directories, constants 
+		or other input data in the script files. Instead embed these into discrete parameter and constant files 
+		and refer to these.
+	
+		Example:
+			Good:
+				
+				# Here we check if this variable matches the GWP constant of methane and read 
+				# a specific file if true.
+				if (this_clearly_named_variable == CONST_gwp5_CH4) {
+					read.table(PATH_to_generic_file)
+					}
+
+			Bad:
+				if (varx==25){read.table(/specific/system/dependent/path/to.specific.file)}
+				
+2. Coding practices
+	* This syntax guide is generally modelled after the style guide of R's "Tidyverse", so if something is 
+	not clearly defined in this document, refer to the Tidyverse style guide.
+	It can be found here: https://style.tidyverse.org/index.html
+
+	2.1. General syntax
+		* Tabs are the preferred indentation.		
+		
+		* Avoid line lengths of over 80 characters.
+			
+		* Always put a space after a comma and around comparison operators.
+
+		Examples: 
+			* some_matrix[, 1]
+			* list_of_things = c("item1", "item2", "item3")
+			* if (one_variable > another_variable)
+			
+		* Opening brackets should be at the end of the starting element, closing bracket on a separate row,
+		indentation matching the beginning of the element.
+
+		Example:
+		
+			if (some_variable == TRUE) {
+				if(second_variable == FALSE) {
+					... do something
+				}					
+			}
+	
+	2.2. Data management
+		* Always save data files either as .txt or .csv
+		
+		* Use semicolon (;) as a separator for csv files.
+		
+		* Column headers for data should always in be in full lower case and use snake_case (see: section 3.)
+		
+		* Make sure to always describe the units of your data, either in the code or in other metadata.
+
+3. Naming conventions, folder structure and other specific use cases
+	* File, folder, variable and function names should all use "snake case", meaning underscores 
+		between words e.g. this_is_a_file.R, this_is_variable, Some_Function, Folder_containg_something.
+		
+	* Use PATH_, CONST_, FUNC_ prefixes naming any global variables
+		
+	3.1. Folders
+		* Folder names should Capitalised 
+		
+		* Folder names should be adjectives
+		
+		* All input files should *always* be in a separate subfolder called "Input".
+		
+	    * All intermediary results should be in a separate subfolder called "Midresults".
+		
+	    * All results should always be in a seprate subfolder called "Results".
+		
+	3.2. Files		
+	    * File names should not be capitalized (this_is_file.R) 
+		
+		* File names should give a clear indication of the contents (weather_data_1990-2010.csv)
+		
+		* Use .R for R-script files, .txt or .csv for for data files.
+							
+	3.3. Variables
+		* Variable names should be in lower case (example_variable).
+		
+		* Variable names should be adjectives.
+					
+	3.4. Functions
+		* Always define functions in the beginning of the script file
+		
+		* Function names should be in uppercase (Example_function) and make it clear it is a function.
+		
+		* Function names should be verbs.
+		
+		* When functions have more than two parameters, write them on multiple rows and match the indentation.
+		
+		Example:
+			Good:
+				Some_function(parameter1 == "A",
+							  parameter2 == "B",
+							  parameter3 == "C")
+							
+			Bad:
+				id2.rji2(fkt=="A",sdjk=="B",vkjl.5=="C")
+				
+		* If you find yourself using the same or similar functions multiple times, consider making it into
+		a generic function in the FUNCTIONS.R file.
+	
+	3.5. Dates
+	
+		* Use the ISO 8601 standard for dates when possible, i.e. YYYY-MM-DD. Always use leading zeros. 
+		The advantage of this representation is not only unambiguity, but also that alphabetically dates
+		are always in the right chronological order.
+			- See https://en.wikipedia.org/wiki/ISO_8601 for details		
+	
+		* If a file name contains a date, it is highly advisable to adhere to the ISO standard. Usually it's
+		practical to include the date first in the filename for easier sorting, i.e. 2015-05-01_weather_data.csv
+				
+4. Metadata
+
+	* Whenever reading or producing final data, always include metadata
+	
+	* Metadata is included as a .meta file, with otherwise the same name, as the datafile it describes.
+	
+	* Metadata should use a standard format, see the separate documentation for handling metadata. 
