@@ -99,21 +99,19 @@ weather_stations <-
   group_by(station, x,y) %>% 
   summarise(station = unique(station))
 
-
 avg_temp_by_station <-
   weather_data %>% 
-  filter(year %in% c(2014:2018), month %in% c(5:10)) %>% 
+  filter(year < 2017) %>% 
   group_by(station) %>% 
   summarise(mean_temp = mean(temp_avg)) %>% 
   rename(weather_gridpoint = station)
 
 avg_temp_30y_by_station <-
   weather_data %>% 
-  filter(month %in% c(5:10)) %>% 
   group_by(station, year) %>% 
   summarise(mean_temp = mean(temp_avg)) %>% 
   mutate(roll30y_temp = rollmean(mean_temp, 30, align="right", fill=NA)) %>% 
-  filter(year > 1989, year < 2017) %>% 
+  filter( year < 2017) %>% 
   rename(weather_gridpoint = station)
   
 
@@ -138,3 +136,51 @@ vmi12_lampotilat_aikasarja <-
 
 
 write.table(vmi12_lampotilat_aikasarja, file = "work/VMI12_lampotilat_aikasarja.csv", quote = FALSE, row.names = FALSE, col.names = TRUE)
+
+##############
+
+
+avg_stuff_all_years <-
+  weather_data %>%
+  filter(year < 2017, month %in% c(5:10)) %>% 
+  group_by(year, station) %>%
+  summarise(sum_P = sum(prec),
+            avg_T = mean(temp_avg),
+            ampli_T = (max(temp_avg) - min(temp_avg)) /2) %>% 
+  rename(weather_gridpoint = station)
+
+
+
+vmi12_lampotilat_kaikki <-
+  vmi12_pisteet %>% 
+  rename(weather_gridpoint = HubName, dist_to_gridpoint = HubDist) %>% 
+  left_join(avg_stuff_all_years) %>% 
+  select(lohko, koeala, weather_gridpoint, year, sum_P, avg_T, ampli_T) %>% 
+  group_by(lohko, koeala, year) %>% 
+  summarize(sum_P = mean(sum_P),
+            avg_T = mean(avg_T),
+            ampli_T = mean(ampli_T)) 
+
+nfi12plots <- read.table(
+  'work/NFI12PLOTS',
+  col.names=c('region','cluster','plot','stand','centre','area','forest','drpeat','peat_type'),
+  na.strings='.'
+)
+
+vmi_alat <-
+  nfi12plots %>% 
+  filter(forest == 1, drpeat == 1) %>% 
+  select(region, cluster, plot, area, peat_type) %>% 
+  rename(lohko = cluster,
+         koeala = plot) %>% 
+  mutate(mainregion = if_else(region %in% c(1:2), 1, 2)) %>% 
+  group_by(mainregion, peat_type) %>% 
+  mutate(totarea = sum(area)) %>% 
+  ungroup %>% 
+  left_join(vmi12_lampotilat_kaikki) %>% 
+  group_by(mainregion, peat_type, year) %>% 
+  summarize(sum_P = weighted.mean(sum_P, w = totarea),
+            avg_T = weighted.mean(avg_T, w = totarea),
+            ampli_T = weighted.mean(ampli_T, w = totarea)) %>% 
+  group_by()
+

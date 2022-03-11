@@ -4,6 +4,7 @@ source("PATHS.R")
 source("FUNCTIONS.R")
 source("CONSTANTS.R")
 
+CONST_dpi = 600
 
 peat_decomposition <- read.table(PATH_peat_decomposition, header = TRUE) # peat degradation
 basal_area_data <- read.table(PATH_basal_area_data, header = TRUE)
@@ -35,14 +36,15 @@ theme_Publication <- function(base_size=12) {
             axis.ticks = element_line(),
             panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),
+            panel.spacing = unit(0.5, "cm"),
             legend.key = element_rect(colour = NA),
             #legend.position = "bottom",
             #legend.direction = "horizontal",
            # legend.key.size= unit(0.01, "cm"),
-            #legend.margin = unit(0, "cm"),
+            legend.spacing = unit(0, "cm"),
+            #legend.box.spacing = unit(0, "cm"),
             legend.title = element_text(face="italic"),
-            plot.margin=unit(c(10,5,5,5),"mm"),
-            #strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+
             strip.background=element_blank(),
             strip.text = element_text(face="bold")
     ))
@@ -86,7 +88,7 @@ figure2
 
 ggsave(figure2, 
        filename = file.path(PATH_pubfigures, "figure2.png"), 
-       dpi = 300,
+       dpi = CONST_dpi,
        width = 8,
        height = 4)
 
@@ -114,7 +116,7 @@ figure3 <- ggplot(data=basal_areas, aes(x = year, y = basal_area, col = peat_nam
   labs(color='Peatland forest type', shape = "Peatland forest type") 
 
 ggsave(figure3, filename = file.path(PATH_pubfigures, "figure3.png"), 
-       dpi = 300,
+       dpi = CONST_dpi,
        width = 8,
        height = 4)
 
@@ -133,7 +135,7 @@ GHGI_co2 <- rename(GHGI_co2, final_CO2 = ghgi_co2)
 soil_comp <- 
   soil_carbon_balance_total %>% 
   select(year, final_CO2) %>% 
-  mutate(Method = "new") %>% 
+  mutate(Method = "New method") %>% 
   rbind(., GHGI_co2)
 
 fig_tot_CO2 <- ggplot(data=soil_comp, aes(x = year, y = final_CO2, col = Method)) +
@@ -145,7 +147,9 @@ fig_tot_CO2 <- ggplot(data=soil_comp, aes(x = year, y = final_CO2, col = Method)
   scale_fill_Publication() +
   scale_colour_Publication() +
   theme_Publication() +
-  theme(legend.position = "none")
+  theme(legend.position = c(0.73, 0.85)) +
+  labs(color="") 
+
 
 new_co2_reg <-
   soil_carbon_balance_southnorth %>% 
@@ -172,12 +176,14 @@ fig_tot_CO2_reg <- ggplot(data=co2_reg, aes(x = year, y = CO2, col = method)) +
   scale_colour_Publication() +
   labs(title = "Regions") +
   theme_Publication() +
-  labs(color="") 
+  labs(color="") +
+  theme(legend.position = "none")
+  
 
 figure4 <- ggarrange(fig_tot_CO2, fig_tot_CO2_reg)
 ggsave(figure4, 
        filename = file.path(PATH_pubfigures, "figure4.png"), 
-       dpi = 300, 
+       dpi = CONST_dpi, 
        width = 8,
        height = 4)
 
@@ -308,7 +314,7 @@ megafig_reg <- FUNC_regionify(megafig, revreg = TRUE)
 figure5 <- ggplot(data=filter(megafig_reg, year < 2017), aes(x = year, y = value, fill = component)) +
   geom_area() +
   geom_path(data=filter(nettot_rig, year < 2017), aes(x = year, y = net), linetype = "longdash") +
-  xlab("Year") +
+  xlab("") +
   ylab(bquote("Decomposition and litter production (t "~CO[2]~ ~ha^-1~ ~y^-1~")")) + 
   facet_grid(region~method) +
   labs(fill="") +
@@ -321,7 +327,7 @@ figure5 <- ggplot(data=filter(megafig_reg, year < 2017), aes(x = year, y = value
 
 ggsave(figure5, 
        filename = file.path(PATH_pubfigures, "figure5.png"), 
-       dpi = 300,
+       dpi = CONST_dpi,
        width = 8, 
        height = 6)
 
@@ -385,7 +391,7 @@ figure6 <- ggplot(data=lognat_plot, aes(x = year, y = litter, fill = component))
 
 ggsave(figure6, 
        filename = file.path(PATH_pubfigures, "figure6.png"), 
-       dpi = 300, 
+       dpi = CONST_dpi, 
        width = 8,
        height = 6)
 
@@ -458,7 +464,7 @@ total_litter_cats$category <- factor(total_litter_cats$category,
 figure7 <- ggplot(data=total_litter_cats, aes(x = year, y = litter)) +
   geom_area(aes(fill = category)) +
   ylab(bquote("Decomposition and litter production (t "~CO[2]~ ~ha^-1~ ~y^-1~")")) + 
-  xlab("Year") +
+  xlab("") +
   geom_path(data = total_net, aes(x=year, y=net), linetype = "longdash") +
   facet_grid(region ~ peat_name) +
   labs(fill="") +
@@ -469,7 +475,7 @@ figure7 <- ggplot(data=total_litter_cats, aes(x = year, y = litter)) +
 
 ggsave(figure7, 
        filename = file.path(PATH_pubfigures, "figure7.png"), 
-       dpi = 300,
+       dpi = CONST_dpi,
        width = 8,
        height = 4, 
        scale = 1.5)

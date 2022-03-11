@@ -28,3 +28,7 @@ source(PATH_ef_script)
 
 # Calculate the final emissions based on emission factors and area data
 source(PATH_total_script)
+
+# Finally calculate figures used for publication. Placed in /Figures/Publication
+
+source("PLOTS.R")

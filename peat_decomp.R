@@ -17,12 +17,12 @@ weather_data_aggregated <- read.table(PATH_weather_data_aggregated, header = TRU
 
  weather_data_30rollavg <- read.csv("C:/Users/03180980/luke-peatland/Input/Weather/weather_data_by_peattype.csv", sep="")
 
-weathers <- 
-  weather_data_aggregated %>%
-  filter(month > 4 & month < 11) %>%
-  group_by(region, year) %>%
-  summarise(mean_T = mean(mean_T)) %>%
-  mutate(roll_T = rollmean(mean_T, 30, align="right", fill=NA))
+# weathers <- 
+#   weather_data_aggregated %>%
+#   filter(month > 4 & month < 11) %>%
+#   group_by(region, year) %>%
+#   summarise(mean_T = mean(mean_T)) %>%
+#   mutate(roll_T = rollmean(mean_T, 30, align="right", fill=NA))
   
 
 
