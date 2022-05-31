@@ -8,9 +8,6 @@
 
 
 library(sf)
-library(dplyr)
-library(reshape2)
-library(ggplot2)
 #library(RPostgreSQL)
 
 rm(list=ls())
@@ -62,11 +59,12 @@ weather_shapefiles_names <- unlist(strsplit(list.files(PATH_weather_mainareas,
                                                 full.names = FALSE), 
                                      ".shp"), use.names = TRUE)
 
+
+
 # Then read aforementioned subregion files as shapefiles. NOTE! There is no check for overlap etc., so make sure the shapefiles are correct. 
 # Also worth noting, that the since filenames are used in identifying the shapefiles, said filenames should be sensible and human readable.
 weather_shapefiles <- lapply(weather_shapefiles_list, read_sf)
 weather_shapefiles <- setNames(weather_shapefiles, weather_shapefiles_names)
-
 
 
 all_areas <- do.call(rbind, weather_shapefiles)
@@ -76,6 +74,8 @@ mapfig <- ggplot(all_areas) +
   geom_sf() +
   geom_sf_label(aes(label = NAME)) +
   labs(title = "Area subdivision of the weather data") 
+
+st_crs(all_areas[[1]])
 
 
 

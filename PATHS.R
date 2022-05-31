@@ -81,7 +81,7 @@ source("LIBRARIES.R")
 # Emission factor
   
   PATH_ef_script = paste(PATH_main, "emission_factor.R", sep = "") # main file
-  PATH_ef_lognat_mortality = paste(PATH_input, "lognat_mortality.csv", sep = "") # Natural and logging mortality estimated with Yasso07
+  PATH_ef_lognat_mortality = paste(PATH_input, "lognat_mortality_new.csv", sep = "") # Natural and logging mortality estimated with Yasso07
   PATH_ef_emission_factor = paste(PATH_midresults, "emission_factor.csv", sep = "" )
   PATH_ef_emission_factor_weighted = paste(PATH_midresults, "emission_factor_weighted.csv", sep = "")
   

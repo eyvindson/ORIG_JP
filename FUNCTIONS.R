@@ -58,11 +58,13 @@ FUNC_regionify <- function(datafile, peatnaming = FALSE, peat_percentage = FALSE
   if (peatnaming) {
   outputfile$peat_name <- factor(outputfile$peat_name, 
                                  levels = c("Rhtkg", "Mtkg",  "Ptkg",  "Vatkg", "Jatkg"),
-                                 labels = c("Herb rich type (Rhtkg)", 
-                                            "Vaccinium myrtillus type (Mtkg)", 
-                                            "V. vitis-idaea type (Ptkg)",
-                                            "Dwarf shrub type (Vatkg)",
-                                            "Cladonia type (Jatkg)"))
+                                 labels = c("Rhtkg", "Mtkg",  "Ptkg",  "Vatkg", "Jatkg"))
+                                 
+                                 # labels = c("Herb rich type (Rhtkg)", 
+                                 #            "Vaccinium myrtillus type (Mtkg)", 
+                                 #            "V. vitis-idaea type (Ptkg)",
+                                 #            "Dwarf shrub type (Vatkg)",
+                                 #            "Cladonia type (Jatkg)"))
   }
 
 
