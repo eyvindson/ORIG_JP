@@ -5,6 +5,8 @@ Projektin rakenne:
 * Kaikki lopulliset tulokset kansioon Results
 * Mitään polkuja ei ole kirjoitettu suoraan koodiin
 
+ISOILLA KIRJAIMILLA kirjoitetut tiedostot ovat laskennan aputiedostoja, jotka sisältävät vakioita, funktioita, tiedostopolkuja ym.
+
 Käyttöohje:
 
 1. avaa tiedosto PATHS.R ja ohjaa polku siihen kansioon jossa laskutiedostot sijaitsevat

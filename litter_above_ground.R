@@ -10,6 +10,11 @@ source("CONSTANTS.R")
 # Read in the basal area data. in m2/ha
 basal_area_data <- read.table(PATH_basal_area_data, header = TRUE)
 
+# basal_avg <-
+#   basal_area_data %>% 
+#   group_by(region, peat_type) %>% 
+#   summarize(basal_area = mean(basal_area))
+
 # Calculate ground vegetation biomass
 
 ground_vegetation_litter <-
@@ -19,13 +24,11 @@ ground_vegetation_litter <-
   mutate(biomass = (CONST_total_ground_vegetation_biomass_A * basal_area) + regression_constant) %>% 
   # Transform g/m2 dry mass to ton C/ha/y
   mutate(ground_vegetation_litter = biomass * CONST_biomass_to_C * 0.01) %>% 
-  # leave out unneccessary columns
+  # leave out unnecessary columns
   select(region, peat_type, year, ground_vegetation_litter)
 
 # Read in the tree litter data from ghgi
 tree_litter_data <- read.table(PATH_total_tree_litter, header = TRUE) 
-
-# For new data comparison
 
 # Calculate the total above ground litter production
 above_ground_litter <-
@@ -56,7 +59,6 @@ total_above_ground_litter <-
   mutate(total_above_ground_litter = (ground_vegetation_litter + above_ground_litter_total))
   #select(region, year, peat_type, total_above_ground_litter)
 
-  
 # Save the results
 
 write.table(x = total_above_ground_litter, 
@@ -67,6 +69,8 @@ write.table(x = total_above_ground_litter,
             sep =" ")
 
 # Draw a figure. Add in peatland name for clarity.
+
+if(PARAM_draw_plots) {
 
 total_above_ground_litter <- right_join(total_above_ground_litter, CONST_peat_lookup)
 
@@ -79,3 +83,5 @@ fig <- ggplot(data=total_above_ground_litter, aes(x = year, y = total_above_grou
   facet_wrap(~region) +
   theme_bw()
 ggsave(fig, filename = file.path(PATH_figures, "above_ground_litter.png"), dpi = 120)
+
+}

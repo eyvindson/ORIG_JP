@@ -25,7 +25,7 @@ find_region <- function(point, named_shapefiles) {
 
 
 # !TODO! Commented away until this step can be performed reliably
-#
+
 # install.packages("RPostgreSQL")
 # require("RPostgreSQL")
 # 
@@ -36,7 +36,7 @@ find_region <- function(point, named_shapefiles) {
 #                  dbname = "weather",
 #                  port = "5432",
 #                  user = "mkf140",
-#                  password = "XXXXXXX")
+#                  password = "inventaarionsääsalasna")
 # 
 # dbListTables(con)
 # dbListFields(con, "grid_month")
@@ -59,8 +59,6 @@ weather_shapefiles_names <- unlist(strsplit(list.files(PATH_weather_mainareas,
                                                 full.names = FALSE), 
                                      ".shp"), use.names = TRUE)
 
-
-
 # Then read aforementioned subregion files as shapefiles. NOTE! There is no check for overlap etc., so make sure the shapefiles are correct. 
 # Also worth noting, that the since filenames are used in identifying the shapefiles, said filenames should be sensible and human readable.
 weather_shapefiles <- lapply(weather_shapefiles_list, read_sf)
@@ -76,7 +74,6 @@ mapfig <- ggplot(all_areas) +
   labs(title = "Area subdivision of the weather data") 
 
 st_crs(all_areas[[1]])
-
 
 
 # Reading the raw weather data

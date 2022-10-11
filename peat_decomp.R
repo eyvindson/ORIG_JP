@@ -8,23 +8,14 @@ source("PATHS.R")
 source("FUNCTIONS.R")
 source("CONSTANTS.R")
 
-# Here we input the tree basal area and weather data
+# Here we input the tree basal area and weather data. Basal area unit m2/ha
 
 basal_area_data <- read.table(PATH_basal_area_data, header = TRUE)
-weather_data_aggregated <- read.table(PATH_weather_data_aggregated, header = TRUE)
+# weather_data_aggregated <- read.table(PATH_weather_data_aggregated, header = TRUE)
 
 # Start by calculating a 30 year rolling average for mean temperature in May-Nov 1990->
 
- weather_data_30rollavg <- read.csv("C:/Users/03180980/luke-peatland/Input/Weather/weather_data_by_peattype.csv", sep="")
-
-# weathers <- 
-#   weather_data_aggregated %>%
-#   filter(month > 4 & month < 11) %>%
-#   group_by(region, year) %>%
-#   summarise(mean_T = mean(mean_T)) %>%
-#   mutate(roll_T = rollmean(mean_T, 30, align="right", fill=NA))
-  
-
+weather_data_30rollavg <- read.csv(PATH_weather_data_30yr_roll_avg, sep="")
 
 # Here is the actual for peat degradation. Linear equations 
 
@@ -42,8 +33,7 @@ peat_decomposition <-
   # Select only the end result for saving
   select(region, year, peat_type, peat_deg)
 
-
-# Save data and metadata
+# Save data
 
 write.table(x = peat_decomposition, 
             file = PATH_peat_decomposition, 
@@ -52,26 +42,9 @@ write.table(x = peat_decomposition,
             col.names = TRUE, 
             sep =" ")
 
-# Finally, we create the appropriate metadata for the file
-
-
-
-FUNC_create_metadata(datafile = PATH_peat_decomposition, 
-                     description = "Calculated peat decomposition type divided by region and peatland type", 
-                     source = "Calculated based on basal area data and weather data",
-                     fields = c("region", 
-                                "year",
-                                "peat_type", 
-                                "peat_name", 
-                                "peat_deg"), 
-                     units_or_desc = c("Region of Finland", 
-                                       "Year",
-                                       "Peatland type coded numerically",
-                                       "Peatland type code, see documentation for further information",
-                                       "Degradation of peat, in tons of C per ha per year"))
-
-
 # Draw a plot
+
+if(PARAM_draw_plots) {
 
 peat_decomposition <- right_join(peat_decomposition, CONST_peat_lookup)
 peat_decomposition <- FUNC_regionify(peat_decomposition, peatnaming = TRUE)
@@ -88,3 +61,4 @@ fig <- ggplot(data=peat_decomposition, aes(x = year, y = peat_deg, col = peat_na
   labs(color='Peatland forest type', shape = "Peatland forest type") 
 ggsave(fig, filename = file.path(PATH_figures, "peat_decomposition.png"), dpi = 120)
 
+}

@@ -1,6 +1,6 @@
-# Process area data #
+# Process area data 
 # 
-# This script reads area data from the inventory and calculates the appropriate areas for calculation
+# This script reads area data from the inventory, transforms and aggregates the needed values for this calculation
 
 rm(list=ls())
 
@@ -15,7 +15,7 @@ areas_long <- FUNC_longify(all_areas, value_name = "area")
 
 # Lookup table for regions for converting NFI areas to South/North Finland 1,2 = south, 3,4, = north
 regsum <- data.frame(region = c(1,2,3,4),
-                      mainreg = rep(c("south", "north"), each = 2))
+                     mainreg = rep(c("south", "north"), each = 2))
 
 # Filter and aggregate the data
 areas_aggregated <-

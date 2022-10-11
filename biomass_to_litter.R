@@ -1,4 +1,4 @@
-# This script converts biomass fractions into litter fractions.
+# This script converts biomass fractions into litter fractions
 
 rm(list=ls())
 
@@ -6,7 +6,7 @@ source("PATHS.R")
 source("FUNCTIONS.R")
 source("CONSTANTS.R")
 
-#BM_interp_long <- read.csv("C:/Users/03180980/OneDrive - Valtion/R/Peatlands/BM_interp_long.txt", sep="")
+#BM_interp_long <- read.csv("C:/Users/03180980/OneDrive - Valtion/R/Peatlands/BM_interp_long.txt", sep
 BM_interp_long <- read.csv(PATH_interpolated_biomass, header = TRUE, sep = " ")
 LOOKUP_litter_conversion <- read.table(PATH_lookup_litter, header = TRUE)
 LOOKUP_awentype <- read.table(PATH_lookup_awentype, header = TRUE)
@@ -25,6 +25,8 @@ bm_conv <- data.frame(component = 1:7,
                                  "Stumps",
                                  "Roots"))
 
+# Select only the values we need
+
 biomass_crop <- 
   BM_interp_long %>% 
   group_by(region, tkg, component, year) %>% 
@@ -38,29 +40,27 @@ biomass_crop <-
   select(-peat_type, -component)
 
 
-biomass_table <- FUNC_regionify(biomass_crop, peatnaming = TRUE)
+# biomass_table <- FUNC_regionify(biomass_crop, peatnaming = TRUE)
 
-bm_table_wide <- dcast(biomass_table, region+peat_name+bmtype~year, value.var = "bm")
-
-#write.table(bm_table_wide, "wide_bm.csv", quote = FALSE, dec = ",", sep = ";")
-
-ggplot(biomass_table, aes(x = year, y = bm, group = region)) +
-  geom_col(aes(fill= region), position = "dodge") +
-  geom_text(aes(
-            label = round(bm,1)), 
-            size = 3,
-            vjust = -0.3,
-            # hjust = 0.2,
-            color="black",
-            position = position_dodge(6.5)) +  
-  facet_grid(bmtype~peat_name) +
-  labs(fill="") +
-  ylim(0,max(biomass_table$bm+5)) +
-  xlab("Year") +
-  ylab(bquote("Biomass (t kg "~ ha^-2~ ")")) +
-  theme_bw() +
-  theme(strip.background = element_rect(fill="white"),
-        legend.position = "bottom") 
+# #write.table(bm_table_wide, "wide_bm.csv", quote = FALSE, dec = ",", sep = ";")
+# 
+# ggplot(biomass_table, aes(x = year, y = bm, group = region)) +
+#   geom_col(aes(fill= region), position = "dodge") +
+#   geom_text(aes(
+#             label = round(bm,1)), 
+#             size = 3,
+#             vjust = -0.3,
+#             # hjust = 0.2,
+#             color="black",
+#             position = position_dodge(6.5)) +  
+#   facet_grid(bmtype~peat_name) +
+#   labs(fill="") +
+#   ylim(0,max(biomass_table$bm+5)) +
+#   xlab("Year") +
+#   ylab(bquote("Biomass (t kg "~ ha^-2~ ")")) +
+#   theme_bw() +
+#   theme(strip.background = element_rect(fill="white"),
+#         legend.position = "bottom") 
 
 
 
@@ -83,7 +83,8 @@ alive_litter <-
   litter_types %>%
   # Leaving out dead branches in order to avoid double counting
   filter(component != 5) %>%
-  filter(component != 2 && species != 2) %>% 
+  # Leave out spruce bark
+  filter(!(component == 2 & species == 2)) %>%
   # divide into above and below ground litter
   mutate(ground = ifelse(component == 7, "below", "above")) %>%
   group_by(region, year, tkg, litter_type, ground) %>%
@@ -104,12 +105,13 @@ alive_litter <-
 
 ghg_path = paste(PATH_ghgi, "2019/trees/drain/remaining/litter/lulucf/", sep ="")
 
-
+# List all the GHGI files containing the pertinent data
 litter_file_list <- list.files(ghg_path, 
                                pattern = "*csv")
 
 listfill <- data.frame()
 
+# These are just for unifying GHGI style nomenclature and markup with the peat stuff 
 mort_lookup <- data.frame(mort = c("log", "nat"),
                           mortality = c("logging", "natural"))
 
@@ -125,7 +127,7 @@ region2_lookup <- data.frame(reg = c("sf", "nf"),
 ground_lookup <- data.frame(gnd = c("abv", "bel"),
                             ground = c("above", "below"))
 
-# Use file names for classification
+# Use file names for classification then read the contents to a table iteratively
 
 for (i in 1:length(litter_file_list)) {
   
@@ -144,6 +146,7 @@ for (i in 1:length(litter_file_list)) {
   listfill <- rbind(listfill, read_item)  
 }
 
+# Calculate the litter production from logging and natural mortality
 lognat_litter <- 
   listfill %>% 
   # Filter out prior to 1990 and mineral grounds
@@ -155,22 +158,48 @@ lognat_litter <-
   mutate(litter = A + W + E + N) %>% 
   select(region, year, litter_type, ground, litter, mortality)
 
+if(PARAM_scenario %in% c(1,3)) {
+  lognat_litter <-
+    lognat_litter %>%
+    group_by(region, litter_type, ground, mortality) %>% 
+    mutate(litter = first(litter))
+}
+
+  write.table(x = lognat_litter,
+              file = "Work/dead_litter_2.csv",
+              row.names = FALSE,
+              quote = FALSE,
+              col.names = TRUE,
+              sep =" ")
+
+
 
 # Here we expand the dead litter into peatland types and weight them based on type
 
 dead_litter <-
   lognat_litter %>%
+  #filter(litter_type == "coarse_woody_litter") %>% 
   # weight the biomasses based on peatland type
   group_by(region, year) %>% 
   summarize(litter = sum(litter))
-
 
 total_tree_litter <- 
   alive_litter %>% 
   rename(peat_type = tkg,
          litter_biomass = litter)
 
+# DEBUG!
+if(PARAM_scenario %in% c(1,3)) {
+total_tree_litter <- 
+  total_tree_litter %>% 
+  group_by(region, peat_type, litter_type, ground, mortality) %>% 
+  mutate(litter_biomass = first(litter_biomass))
 
+}
+
+#
+
+# Save the results
 write.table(x = total_tree_litter, 
             file = PATH_total_tree_litter, 
             row.names = FALSE, 
@@ -184,25 +213,6 @@ write.table(x = dead_litter,
             quote = FALSE, 
             col.names = TRUE, 
             sep =" ")
-
-# write.table(x = lognat_litter, 
-#             file = "dead_litter_2.csv", 
-#             row.names = FALSE, 
-#             quote = FALSE, 
-#             col.names = TRUE, 
-#             sep =" ")
-
-
-# lognat_wide <- dcast(total_tree_litter, region+litter_type+ground+mortality~year, value.var = "litter_biomass", fun.aggregate = mean)
-# 
-# write.table(x = lognat_wide, 
-#             file = "lognat_wide.txt", 
-#             row.names = FALSE, 
-#             quote = FALSE, 
-#             col.names = TRUE,
-#             dec = ",",
-#             sep =" ")
-
 
 
 # THESE ARE COMMENTED OUT BUT LEFT IN CASE AWEN CALCULATIONS ARE NEEDED AT SOME POINT

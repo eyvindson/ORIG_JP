@@ -1,12 +1,11 @@
 # Define any and all constants in this file. Prefix the variables with CONST_ for unambiguity.
 
-# GWP
+# GWP ratios here
 
 CONST_gwp5_ch4 <- 25
 
 # This is a core variable containing the peatland forest types used in the calculations, coded as integers.
-# Originally the codified types were 1, 2, 4, 6, 7. Numbers are not completely sequential because original 
-# types 2 & 3 were combined into 2 and 4 & 5 into 4. 
+# Numbers are not completely sequential because original types 2 & 3 were combined into 2 and 4 & 5 into 4. 
 
 CONST_peatland_types = c( 1, 2, 4, 6, 7)
 
@@ -23,6 +22,8 @@ CONST_peat_decomposition_by_peatland_type  <- data.frame(peat_type  = CONST_peat
 # The proportion of dwarf shrub projection coverage of dwarf shrubs from Ojanen 2014 Table A.3
 # Unit: g / m2
 CONST_dwarfshrub_root_biomass <- 4.81
+
+# Coverage in percentages of total area
 CONST_dwarfshrub_coverage <- data.frame(
   peat_type =    CONST_peatland_types,
   dshrub_cover = c(7, 15.4515, 32.0105, 45, 40))
@@ -47,9 +48,9 @@ CONST_fine_root_deep_fraction <- 1.043
 
 # Conversion factor of dry biomass into carbon
 CONST_biomass_to_C <- 0.5
+CONST_C_to_CO2 <- 44/12
 
-# Total ground vegetation biomass. Linear regression equations based on Ojanen 2014.
-
+# Total ground vegetation biomass. Linear regression equations based on Ojanen 2014. Includes both above and below ground biomass.
 CONST_total_ground_vegetation_biomass_A <- -4.52
 
 CONST_total_ground_vegetation_biomass_by_peatland_type  <- data.frame(

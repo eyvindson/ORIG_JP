@@ -4,6 +4,9 @@ source("PATHS.R")
 source("FUNCTIONS.R")
 source("CONSTANTS.R")
 
+library(ggpubr)
+library(forcats)
+
 CONST_dpi = 600
 
 peat_decomposition <- read.table(PATH_peat_decomposition, header = TRUE) # peat degradation
@@ -18,10 +21,7 @@ GHGI_litter <- read.delim("work/GHGI_litter.txt")
 tree_uptake <- read.csv("C:/Users/03180980/luke-peatland/Work/tree_uptake.txt", sep=";")
 
 
-
-
 theme_Publication <- function(base_size=12) {
- # library(grid)
   library(ggthemes)
   (theme_foundation(base_size=base_size)
     + theme(plot.title = element_text(face = "bold",
@@ -75,20 +75,30 @@ yasso_saadata <- read.csv("C:/Users/03180980/luke-peatland/Work/yasso_weather.cs
 #yasso_saadata <- yasso_saadata %>% right_join(CONST_peat_lookup)
 yasso_saadata <- FUNC_regionify(yasso_saadata, peatnaming = FALSE)
 
+if(PARAM_scenario %in% c(2,3)) {
+
+yasso_saadata <-
+  yasso_saadata %>%
+  group_by(region) %>%
+  mutate(roll_T = first(roll_T),
+         roll_P = first(roll_P))
+
+}
+
 # yasso_saadata <- 
 #   yasso_saadata %>% 
 #   pivot_longer(cols = c(roll_T, roll_P, roll_A), names_to = "stat", values_to = "value")
 
 
-weather_data <- read.csv("C:/Users/03180980/luke-peatland/Input/Weather/weather_data_by_peattype.csv", sep="")
+weather_data <- read.csv(PATH_weather_data_30yr_roll_avg, sep="")
 weather_data <- weather_data %>% right_join(CONST_peat_lookup)
 weather_data <- FUNC_regionify(weather_data, peatnaming = TRUE)
 
 
 # weather_data$peat_type <- factor(weather_data$peat_type,
 #                                  levels = CONST_peat_lookup$peat_type,
-#                                  labels = CONST_peat_lookup$peat_name) 
-#                                  
+#                                  labels = CONST_peat_lookup$peat_name)
+
 
 basic_weather <-  ggplot(data=weather_data, aes(x = year, y = roll_T, col = peat_name)) +
   geom_point() +
@@ -134,7 +144,7 @@ yasso_weather <- ggplot(data=yasso_saadata, aes(x = year, y = roll_T, col = "Tem
      legend.position = "bottom"
   )
 
-figure2 <- basic_weather / yasso_weather
+#figure2 <- basic_weather / yasso_weather
 
 figure2 <- ggarrange(basic_weather, yasso_weather, nrow = 2, widths = c(1,1))
 figure2
@@ -145,9 +155,9 @@ ggsave(figure2,
        width = 6,
        height = 7)
 
+
 write.xlsx(weather_data, file = "excel/fig2.xlsx")
 write.xlsx(yasso_saadata, file = "excel/fig2_2.xlsx")
-
 
 
 #######################################
@@ -157,7 +167,7 @@ write.xlsx(yasso_saadata, file = "excel/fig2_2.xlsx")
 
 basal_areas <- read.table(PATH_basal_area_data, header = TRUE)
 
-basal_areas <- basal_areas %>% right_join(CONST_peat_lookup)
+basal_areas <- basal_areas %>% right_join(CONST_peat_lookup) %>%  filter(year < 2017)
 basal_areas <- FUNC_regionify(basal_areas, peatnaming = T)
 
 
@@ -275,8 +285,8 @@ fig_tot_CO2_alt
 
 write.xlsx(huu, file = "excel/fig4.xlsx")
 
-figure4 <- ggarrange(fig_tot_CO2, fig_tot_CO2_reg)
-figure4
+# figure4 <- ggarrange(fig_tot_CO2, fig_tot_CO2_reg)
+# figure4
 
 ggsave(fig_tot_CO2_alt, 
        filename = file.path(PATH_pubfigures, "figure4.png"), 
@@ -284,7 +294,7 @@ ggsave(fig_tot_CO2_alt,
        width = 6,
        height = 4)
 
-figure4
+# figure4
  
 
 #######################################
@@ -326,12 +336,19 @@ lognat_new_above <-
   filter(ground == "above") %>% 
   group_by(region, year) %>% 
   summarize(litter = sum(litter)) %>% 
-  rename(lognat = litter)
+  rename(lognat = litter) 
+  
 
 
-above_melt <- melt(above_ground_litter, 
-                   id.vars=colnames(above_ground_litter[1:3]), 
-                   variable.name = "component", value.name = "litter")
+# above_melt <- melt(above_ground_litter, 
+#                    id.vars=colnames(above_ground_litter[1:3]), 
+#                    variable.name = "component", value.name = "litter")
+
+above_melt <- 
+  above_ground_litter %>% 
+  pivot_longer(cols = contains("litter"),
+                names_to = "component", 
+               values_to = "litter")
 
 litter_new_above <-
   above_melt %>% 
@@ -352,8 +369,12 @@ litter_new_above_tot <-
 litter_new_above <-
   litter_new_above %>% 
   filter(component != "total_above_ground_litter") %>% 
-  mutate(component = if_else(component == "above_ground_litter_total", "Aboveground tree litter", "Ground vegetation litter"))
-
+  mutate(component = if_else(component == "above_ground_litter_total", "Aboveground tree litter", "Ground vegetation litter")) %>% 
+  group_by(region, component)  
+  # DEBUG!!!
+  if(PARAM_debug) {
+    litter_new_above <- mutate(litter_new_above, value = first(value))
+  }
 
 lognat_new_below <-
   lognat_litter %>% 
@@ -361,6 +382,7 @@ lognat_new_below <-
   filter(ground == "below") %>% 
   group_by(region, year) %>% 
   summarize(litter = sum(litter))
+  
 
 
 litter_new_below <-
@@ -445,6 +467,7 @@ figure5 <- ggplot() +
 figure5
 
 write.xlsx(megafig_reg, file = "excel/fig5.xlsx")
+write.xlsx(nettot_rig, file = "excel/fig5_2.xlsx")
 
 
 ggsave(figure5, 
@@ -570,10 +593,13 @@ total_net <-
 
 total_net <- FUNC_regionify(total_net, peatnaming = TRUE)
 
-total_litter_cats <- melt(total_litter, 
-                          id.vars = colnames(total_litter[1:3]), 
-                          variable.name = "category", value.name = "litter")
-
+# total_litter_cats <- melt(total_litter, 
+#                           id.vars = colnames(total_litter[1:3]), 
+#                           variable.name = "category", value.name = "litter")
+total_litter_cats <- 
+  total_litter %>% 
+  pivot_longer(cols = tree_litter:peat_deg, names_to = "category", values_to = "litter")
+  
 
 total_litter_cats <- 
   total_litter_cats %>% 
@@ -581,6 +607,14 @@ total_litter_cats <-
   right_join(CONST_peat_lookup)
 
 total_litter_cats <- FUNC_regionify(total_litter_cats, peatnaming = TRUE, revreg = TRUE)
+
+
+
+# TEMP_vakio <- read.delim("C:/Users/03180980/luke-peatland/Work/TEMP_vakio.txt") %>% 
+#   rename(templitter = litter) %>% 
+#   mutate(region = as.factor(region)) 
+
+
 
 total_litter_cats$category <- factor(total_litter_cats$category, 
                                      levels = c("tree_litter",
@@ -596,9 +630,12 @@ total_litter_cats$category <- factor(total_litter_cats$category,
 
 figure7 <- ggplot(data=total_litter_cats, aes(x = year, y = litter)) +
   geom_area(aes(fill = category)) +
-  ylab(bquote("Decomposition and litter production (t "~CO[2]~ ~ha^-1~ ~y^-1~")")) + 
+  ylab(bquote("Decomposition and litter production (t "~CO[2]~ ~ha^-1~ ~y^-1~")")) +
   xlab("") +
   geom_path(data = total_net, aes(x=year, y=net), linetype = "longdash", size = 0.8, col = "white") +
+
+  # geom_path(data = TEMP_vakio, aes(x=year, y=templitter), linetype = "solid", size = 0.8, col = "blue") +
+  
   facet_grid(region ~ peat_name) +
   labs(fill="") +
   scale_fill_manual(values = c("Aboveground tree litter" = customcols[1],
@@ -695,3 +732,52 @@ write.xlsx(soil_shit, file = "excel/fig8_2.xlsx")
 #          facet_grid(~region) +
 #            theme_Publication()  +
 #            labs(color="") 
+
+
+# DEBUGGERY
+
+
+herkkis_old <- openxlsx::read.xlsx("Work/herkkis.xlsx")
+
+herkkis_read <- data.frame()
+
+for (i in 0:3) {
+  
+  scenario_table <-
+    read.csv(paste(i, "total.csv", sep=""), sep=";") 
+    
+  herkkis_read <- rbind(herkkis_read, scenario_table)
+  
+}
+
+herkkis <-
+  herkkis_read 
+
+herkkis$region <- factor(herkkis$region,
+                     levels = c("south", "north", "total"),
+                     labels = c("Southern Finland", "Northern Finland", "Total"))
+
+
+herkkis$scenario <- factor(herkkis$scenario,
+                         levels = c("0", "1", "2", "3"),
+                         labels = c("Default", "BA and harvest constant", "TEMP constant", "BA+harvest+TEMP constant"))
+
+herkkis$param <- factor(herkkis$param,
+                           levels = c("total_CO2", "lognat_CO2", "final_CO2"),
+                           labels = c("Alive tree litter - decomposition", "Dead tree litter - decomposition",  "Total soil CO2"))
+
+
+# herkkis <- 
+#   herkkis %>% 
+#   filter(param == "Total soil CO2")
+
+
+ggplot(herkkis, aes(x = year, y = value, col = scenario)) +
+  geom_point() +
+  geom_path() +
+  xlab("") +
+  ylab(bquote("Mt "~CO[2]~"")) + 
+    facet_grid(param ~ region, scales = "free_y") +
+  scale_fill_Publication() +
+  scale_colour_Publication() +
+  theme_Publication()

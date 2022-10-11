@@ -5,6 +5,8 @@
 rm(list=ls())
 source("PATHS.R")
 
+library(reshape2)
+
 # NFI biomass stocks
 
 # Used for distributing the NFI areas to SF/NF division
@@ -20,7 +22,7 @@ species_lookup <- data.frame(laji = c(1,2,3),
 reg_lookup <- data.frame(region = c(1,2,3,4),
                          newreg = c("south", "south", "north", "north"))
 
-dir=paste(PATH_ghgi, "2019/trees/stock/remaining/", sep = "")
+dir=paste(PATH_ghgi, "2020/trees/stock/remaining/", sep = "")
 
 # Differences between the reference dates January 1, xxxx (xxxx=1990,1991,...,2013) and
 # the mean dates of NFIy measurements (y=8,9,10, 11) by region and soil type
@@ -29,12 +31,14 @@ ddiff9=read.table(paste(dir,'MeanDateNFI9.dat',sep=''),col.names=c('region','soi
 ddiff10=read.table(paste(dir,'MeanDateNFI10.dat',sep=''),col.names=c('region','soil','year','ddiff10'))
 ddiff11=read.table(paste(dir,'MeanDateNFI11.dat',sep=''),col.names=c('region','soil','year','ddiff11'))
 ddiff12=read.table(paste(dir,'MeanDateNFI12.dat',sep=''),col.names=c('region','soil','year','ddiff12'))
+ddiff13=read.table(paste(dir,'MeanDateNFI13.dat',sep=''),col.names=c('region','soil','year','ddiff13'))
 
 
 ddiff=merge(ddiff8,ddiff9)
 ddiff=merge(ddiff,ddiff10)
 ddiff=merge(ddiff,ddiff11)
 ddiff=merge(ddiff,ddiff12)
+ddiff=merge(ddiff,ddiff13)
 
 # Compute weights for linear interpolation between the mean dates
 ddiff$w8=-ddiff$ddiff9/(ddiff$ddiff8-ddiff$ddiff9)
@@ -60,10 +64,16 @@ ddiff$w12=ddiff$ddiff11/(ddiff$ddiff11-ddiff$ddiff12) # ADDED
 ddiff$w12[ddiff$ddiff11<0]=0 # ADDED
 ddiff$w12[ddiff$ddiff12 > 0]=1 
 
+# Added 13
+
+ddiff$w13=ddiff$ddiff12/(ddiff$ddiff12-ddiff$ddiff13) # ADDED
+ddiff$w13[ddiff$ddiff12<0]=0 # ADDED
+ddiff$w13[ddiff$ddiff13 > 0]=1 
+
 ddiff_weights <- 
   ddiff %>% 
   filter(soil == 2) %>% 
-  select(region, year, w8, w9, w10, w11, w12)
+  select(region, year, w8, w9, w10, w11, w12, w13)
 
 # Muokataan ddiff-tiedostoa kattamaan E/P jaon lisäksi VMI-aluejako
 ddiff_mod <- 
@@ -73,7 +83,7 @@ ddiff_mod <-
   rename(region = muoto11)
 # Luetaan ppat
 
-tkg_ppa <- read.csv(paste(PATH_input, "basal_areas_and_biomass.csv", sep = ""))
+tkg_ppa <- read.csv2(paste(PATH_input, "basal_areas_and_biomass.csv", sep = ""), dec = ".")
 
 # Otetaan painot suoraan Antin laskemista keskiarvoista
 tkg_weights <-read.csv(paste(PATH_input, "peatland_area_weights.csv", sep = ""), sep = " ")
@@ -88,7 +98,7 @@ ppa_weights <-
   right_join(tkg_lookup) %>% 
   group_by(vmi, muoto11, laji1, gen_tkg, keskivuosi) %>% 
   summarize(painoppa = weighted.mean(keskippa, weight,
-                                     keskivuosi = weighted.mean(keskivuosi, weight))) %>% 
+            keskivuosi = weighted.mean(keskivuosi, weight))) %>% 
   rename(tkg = gen_tkg)
 
 # Tässä karsitaan kaikki turha pois PPA  datasta jotta voidaan liittää painokertoimiin (muista halutaan vaan  SOIL = 2)
@@ -107,21 +117,28 @@ ppat_sum <-
   select(-painoppa) %>%
   rename(laji = laji1, region = muoto11) 
 
+
 # Add missing values by rotating them and using linear interpolation, add back to the main table
+
+ppa_wide <-
+  ppat_sum %>% 
+  pivot_wider(names_from = vmi,
+              values_from = keskippa)
+
 ppa_wide <- dcast(ppat_sum, region+laji+tkg~vmi, value.var = "keskippa", fun.aggregate = mean)
-t_ppa <- t(ppa_wide[4:8])
+t_ppa <- t(ppa_wide[4:9])
 t_napprox <- na.approx(t_ppa)
 nt_ppa <- t(t_napprox)
 ppa_wide <- cbind(ppa_wide[1:3], nt_ppa)
 
-colnames(ppa_wide) <- c("region", "laji", "tkg",   "vmi8",      "vmi9" ,     "vmi10",     "vmi11", "vmi12")
+colnames(ppa_wide) <- c("region", "laji", "tkg",   "vmi8",      "vmi9" ,     "vmi10",     "vmi11", "vmi12", "vmi13")
 
 # Suoritetaan varsinainen interpolaatio
 
 basal_area_per_species <- 
   ppa_wide %>% 
   right_join(ddiff_mod) %>% 
-  mutate(interp_ppa = vmi8*w8 + vmi9*w9 + vmi10*w10 + vmi11*w11 + vmi12*w12) %>% 
+  mutate(interp_ppa = vmi8*w8 + vmi9*w9 + vmi10*w10 + vmi11*w11 + vmi12*w12 + vmi13*w13) %>% 
   select(region, laji, tkg, year, interp_ppa) %>% 
   rename(basal_area = interp_ppa, 
          peat_type = tkg) %>% 
@@ -135,8 +152,33 @@ basal_area_per_species <-
 ggplot(data=basal_area_per_species, aes(x = year, y = basal_area, col = as.factor(tree_type))) +
   geom_point() +
   geom_path() +
+  geom_point(data = funk, aes(x = year, y = basal_area, col = as.factor(tree_type)), shape = 15, size = 2) +
   facet_grid(peat_type~region)
 
+
+
+##########################
+
+# Kikkailua
+
+
+
+
+funk <- 
+  ppat_sum %>% 
+  left_join(reg_lookup) %>% 
+  left_join(species_lookup) %>% 
+  group_by(newreg, tkg, tree_type, keskivuosi) %>% 
+  summarize(ppa = mean(keskippa)) %>% 
+  rename(year = keskivuosi, region = newreg, basal_area = ppa, peat_type = tkg)
+  
+
+ggplot(data=funk, aes(x = keskivuosi, y = ppa, col = as.factor(laji))) +
+  geom_point() +
+  geom_path() +
+  facet_grid(tkg~newreg)
+
+#############################
 
 
 # Tallennetaan lajikohtaisesti erotellut

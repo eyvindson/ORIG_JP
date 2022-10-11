@@ -30,6 +30,7 @@ emission_factor <-
   mutate(emission_factor = total_above_ground_litter + total_below_ground_litter - peat_deg) %>% 
   select(region, peat_type, year, emission_factor)
 
+
 # Save the result
 
 write.table(x = emission_factor, 
@@ -78,6 +79,8 @@ write.table(x = emission_factor,
 
 # Finally draw the plot and save it
 
+if(PARAM_draw_plots) {
+
 fig <- ggplot(data=emission_factor, aes(x = peat_type, y = emission_factor)) +
   geom_bar(position="dodge", stat="identity") +
   ylab("tons of C / ha / y") +
@@ -97,3 +100,4 @@ time_fig <- ggplot(data=emission_factor, aes(x = year, y = emission_factor, col 
   facet_grid(~region) +
   theme_linedraw()
   
+}

@@ -20,15 +20,15 @@ fine_root_biomass_regression <-
   # Add in the regression constants for calculating the biomass
   right_join(CONST_fine_root_biomass_by_treetype) %>% 
   # Then calculate the biomass for each tree type using the regression constants provided
-  mutate(biomass = basal_area * regression_constant) %>% 
+  mutate(tree_fine_root_biomass = basal_area * regression_constant) %>% 
   # Group and sump up all tree types together 
   group_by(region, peat_type, year) %>% 
-  summarize(biomass = sum(biomass)) %>% 
+  summarize(tree_fine_root_biomass = sum(tree_fine_root_biomass)) %>% 
   # Add in dwarf shrub coverage by peatland type, along with regional constants needed in the calculation
   right_join(CONST_dwarfshrub_coverage) %>% 
   right_join(CONST_fine_root_biomass_region) %>% 
   # Calculate the final biomass, by adding the contribution from dwarf shrubs and adjust with the regional modifiers. Convert to tons BM / ha (0.01)
-  mutate(fine_root_biomass = (biomass + (dshrub_cover * CONST_dwarfshrub_root_biomass) + regional_modifier) * 0.01) %>% 
+  mutate(fine_root_biomass = (tree_fine_root_biomass + (dshrub_cover * CONST_dwarfshrub_root_biomass) + regional_modifier) * 0.01) %>% 
   # Drop out unnecessary variables
   select(region, peat_type, year, fine_root_biomass)
 
@@ -38,6 +38,7 @@ fine_root_litter_production <-
   fine_root_biomass_regression %>% 
   # Add in the turnover rates for different peatland types
   right_join(CONST_fine_root_turnover) %>% 
+  # Calculate fine root litter production in tons of C/ha/y
   mutate(fine_root_litter_production = fine_root_biomass * CONST_fine_root_deep_fraction * fine_root_turnover * CONST_biomass_to_C) %>% 
   # drop out all the unnecessary variables
   select(region, peat_type, year, fine_root_litter_production)
@@ -46,7 +47,7 @@ fine_root_litter_production <-
 
 # Read in the woody litter data from GHG inventory
 total_tree_litter <- read.table(PATH_total_tree_litter, header = TRUE) 
-# Select only underground litter and sum up the total amount
+# Select only underground litter and sum up the total amount. NB! Fine woody litter means thicker than 2 cm roots
 tree_litter_sum  <-
   total_tree_litter %>% 
   filter(ground == "below", mortality == "alive") %>%
@@ -61,9 +62,6 @@ total_below_ground_litter <-
   right_join(tree_litter_sum) %>% 
   # Calculate total litter amount
   mutate(total_below_ground_litter = fine_root_litter_production + litter_biomass) 
-  #drop out unneeded columns
-  #select(-fine_root_litter_production, -litter_biomass)
-
 
 # Save the results
 
@@ -75,6 +73,8 @@ write.table(x = total_below_ground_litter,
             sep =" ")
 
 # Draw the figure
+
+if(PARAM_draw_plots) {
 
 total_below_ground_litter <- right_join(total_below_ground_litter, CONST_peat_lookup)
 
@@ -88,4 +88,4 @@ fig <- ggplot(data=total_below_ground_litter, aes(x = year, y = total_below_grou
   theme_bw()
 ggsave(fig, filename = file.path(PATH_figures, "below_ground_litter.png"), dpi = 120)
 
-  
+}
