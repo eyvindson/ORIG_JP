@@ -53,16 +53,17 @@ source("LIBRARIES.R")
 # Weather data parameters (process_weather_data.R)
 
   PATH_weather_script = paste(PATH_main, "process_weather_data.R", sep = "") # main file
-  PATH_weather_data = paste(PATH_input, "Weather/WeatherData_1960_2019.csv",  sep = "") # Data file containing the raw weather data
+  PATH_weather_data = paste(PATH_input, "Weather/WeatherData_1960_2021.csv",  sep = "") # Data file containing the raw weather data
   PATH_weather_mainareas = paste(PATH_input, "Weather/Areas/Main", sep = "") # Path to main shapefiles, e.g. South/North division
   PATH_weather_subareas = paste(PATH_input, "Weather/Areas/Sub", sep = "") # Path to subregions, from NFI
-  PATH_weather_data_aggregated = paste(PATH_midresults, "1960-2019_weather_data.csv", sep = "" ) # Aggregated weather data saved here
+  PATH_weather_data_aggregated = paste(PATH_midresults, "1960-2021_weather_data.csv", sep = "" ) # Aggregated weather data saved here
   PATH_weather_data_30yr_roll_avg <- paste(PATH_input, "Weather/weather_data_by_peattype.csv", sep = "")
 
 # Area data parameters (process_area_data.R)
   
   PATH_area_script = paste(PATH_main, "process_area_data.R", sep = "") # main file
-  PATH_ghgi_area =   paste(PATH_input, "lulucf_rem_kptyy_tkang_ojlk.csv", sep = "")
+  #PATH_ghgi_area =   paste(PATH_input, "lulucf_rem_kptyy_tkang_ojlk.csv", sep = "")
+  PATH_ghgi_area =   paste(PATH_ghgi, "2021/areas/lulucf/results/lulucf_rem_kptyy_tkang_ojlk.txt", sep = "")
   PATH_total_area = paste(PATH_input, "total_area.csv", sep = "")
   
 # Peat degradation (peat_degredation.R)

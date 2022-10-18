@@ -4,6 +4,7 @@
 
 rm(list=ls())
 source("PATHS.R")
+source("CONSTANTS.R")
 
 library(reshape2)
 
@@ -50,13 +51,13 @@ ddiff$w9[ddiff$ddiff9>0]=(-ddiff$ddiff10/(ddiff$ddiff9-ddiff$ddiff10))[ddiff$ddi
 ddiff$w9[ddiff$ddiff10>0]=0 #ADDED
 
 ddiff$w10=ddiff$ddiff9/(ddiff$ddiff9-ddiff$ddiff10)
-ddiff$w10[ddiff$ddiff10>0]=(-ddiff$ddiff11/(ddiff$ddiff10-ddiff$ddiff11 ) ) [ddiff$ddiff10>0] # ADDED
+ddiff$w10[ddiff$ddiff10>0]=(-ddiff$ddiff11/(ddiff$ddiff10-ddiff$ddiff11))[ddiff$ddiff10>0] # ADDED
 ddiff$w10[ddiff$ddiff9<0]=0
 ddiff$w10[ddiff$ddiff11>0]=0
 
 #Lisataan VMI11:lle sama kuin VMI10:lle
 ddiff$w11=ddiff$ddiff10/(ddiff$ddiff10-ddiff$ddiff11)
-ddiff$w11[ddiff$ddiff11>0]=(-ddiff$ddiff12/(ddiff$ddiff11-ddiff$ddiff12 ) ) [ddiff$ddiff11>0] # ADDED
+ddiff$w11[ddiff$ddiff11>0]=(-ddiff$ddiff12/(ddiff$ddiff11-ddiff$ddiff12))[ddiff$ddiff11>0] # ADDED
 ddiff$w11[ddiff$ddiff10<0]=0
 ddiff$w11[ddiff$ddiff12>0]=0
 
@@ -64,16 +65,11 @@ ddiff$w12=ddiff$ddiff11/(ddiff$ddiff11-ddiff$ddiff12) # ADDED
 ddiff$w12[ddiff$ddiff11<0]=0 # ADDED
 ddiff$w12[ddiff$ddiff12 > 0]=1 
 
-# Added 13
-
-ddiff$w13=ddiff$ddiff12/(ddiff$ddiff12-ddiff$ddiff13) # ADDED
-ddiff$w13[ddiff$ddiff12<0]=0 # ADDED
-ddiff$w13[ddiff$ddiff13 > 0]=1 
 
 ddiff_weights <- 
   ddiff %>% 
   filter(soil == 2) %>% 
-  select(region, year, w8, w9, w10, w11, w12, w13)
+  select(region, year, w8, w9, w10, w11, w12)
 
 # Muokataan ddiff-tiedostoa kattamaan E/P jaon lisäksi VMI-aluejako
 ddiff_mod <- 
@@ -120,10 +116,6 @@ ppat_sum <-
 
 # Add missing values by rotating them and using linear interpolation, add back to the main table
 
-ppa_wide <-
-  ppat_sum %>% 
-  pivot_wider(names_from = vmi,
-              values_from = keskippa)
 
 ppa_wide <- dcast(ppat_sum, region+laji+tkg~vmi, value.var = "keskippa", fun.aggregate = mean)
 t_ppa <- t(ppa_wide[4:9])
@@ -135,10 +127,20 @@ colnames(ppa_wide) <- c("region", "laji", "tkg",   "vmi8",      "vmi9" ,     "vm
 
 # Suoritetaan varsinainen interpolaatio
 
+vmi13_addition <-
+  ppat_sum %>% 
+  filter(vmi == 13) %>% 
+  right_join(species_lookup) %>% 
+  right_join(reg_lookup) %>% 
+  rename(basal_area = keskippa, peat_type = tkg, year = keskivuosi) %>% 
+  group_by(newreg, peat_type, tree_type, year) %>% 
+  summarize(basal_area = mean(basal_area)) %>% 
+  rename(region = newreg)
+
 basal_area_per_species <- 
   ppa_wide %>% 
   right_join(ddiff_mod) %>% 
-  mutate(interp_ppa = vmi8*w8 + vmi9*w9 + vmi10*w10 + vmi11*w11 + vmi12*w12 + vmi13*w13) %>% 
+  mutate(interp_ppa = vmi8*w8 + vmi9*w9 + vmi10*w10 + vmi11*w11 + vmi12*w12) %>% 
   select(region, laji, tkg, year, interp_ppa) %>% 
   rename(basal_area = interp_ppa, 
          peat_type = tkg) %>% 
@@ -146,37 +148,74 @@ basal_area_per_species <-
   right_join(reg_lookup) %>% 
   group_by(newreg, peat_type, tree_type, year) %>% 
   summarize(basal_area = mean(basal_area)) %>% 
-  rename(region = newreg)
+  rename(region = newreg) %>% 
+  filter(year < 2017) %>% 
+  # here starts vmi13 addon stuff
+  rbind(vmi13_addition) %>% 
+  group_by(region, peat_type, tree_type) %>% 
+  complete(year = 1990:max(year) + CONST_forward_years) %>% 
+  # This bit here repeats the last true value n amount of years to the future (we don't like extrapolation)
+  mutate(basal_area = if_else(year > max(year) - CONST_forward_years, 
+                              basal_area[which(year == max(year) - CONST_forward_years)], 
+                              basal_area)) %>% 
+  mutate(basal_area = na.approx(basal_area)) %>% 
+  arrange(year)
+
+# For comparisojn
+
+raw_data <-
+  ppat_sum %>% 
+  left_join(species_lookup) %>% 
+  left_join(reg_lookup) %>% 
+  group_by(newreg, tkg, laji, keskivuosi, tree_type) %>% 
+  summarize(basal_area = mean(keskippa)) %>% 
+  rename(peat_type = tkg, year = keskivuosi, region = newreg)
+
+
 
 # Piirretään kuvaaja 
 ggplot(data=basal_area_per_species, aes(x = year, y = basal_area, col = as.factor(tree_type))) +
   geom_point() +
   geom_path() +
-  geom_point(data = funk, aes(x = year, y = basal_area, col = as.factor(tree_type)), shape = 15, size = 2) +
+  geom_point(data = raw_data, aes(x = year, y = basal_area, col = as.factor(tree_type)), shape = 15, size = 2) +
   facet_grid(peat_type~region)
 
 
-
-##########################
-
-# Kikkailua
-
-
-
-
-funk <- 
-  ppat_sum %>% 
-  left_join(reg_lookup) %>% 
-  left_join(species_lookup) %>% 
-  group_by(newreg, tkg, tree_type, keskivuosi) %>% 
-  summarize(ppa = mean(keskippa)) %>% 
-  rename(year = keskivuosi, region = newreg, basal_area = ppa, peat_type = tkg)
-  
-
-ggplot(data=funk, aes(x = keskivuosi, y = ppa, col = as.factor(laji))) +
+ggplot(data=raw_data, aes(x = year, y = basal_area, col = as.factor(tree_type))) +
   geom_point() +
   geom_path() +
-  facet_grid(tkg~newreg)
+  #geom_point(data = raw_data, aes(x = year, y = basal_area, col = as.factor(tree_type)), shape = 15, size = 2) +
+  facet_grid(peat_type~region)
+
+
+##########################
+# 
+# # Kikkailua
+# 
+# interpolation_trial <- 
+#   ppat_sum %>% 
+#   rename(basal_area = keskippa) %>% 
+#   mutate(year = floor(keskivuosi)) %>% 
+#   group_by(region, tkg, laji) %>% 
+#   complete(year = min(year):max(year)) %>% 
+#   mutate(basal_area = na.approx(basal_area)) %>% 
+#   left_join(species_lookup) %>% 
+#   left_join(reg_lookup) %>% 
+#   rename(peat_type = tkg) %>% 
+#   group_by(newreg, peat_type, tree_type, year) %>% 
+#   summarize(basal_area = mean(basal_area)) %>% 
+# #   rename(region = newreg) %>% 
+# #   filter(year > 1989)
+# 
+# # Piirretään kuvaaja 
+# ggplot(data=interpolation_trial, aes(x = year, y = basal_area, col = as.factor(tree_type))) +
+#   geom_point() +
+#   geom_path() +
+#   geom_point(data = funk, aes(x = year, y = basal_area, col = as.factor(tree_type)), shape = 15, size = 2) +
+#   facet_grid(peat_type~region)
+
+
+
 
 #############################
 

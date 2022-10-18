@@ -31,7 +31,7 @@ lognat_litter_total <-
 soil_carbon_balance_peattype <- 
   total_area %>% 
   right_join(emission_factor) %>% 
-  filter(year < 2017) %>% 
+  #filter(year < 2017) %>% 
   mutate(total_emission = area * emission_factor) %>% 
   group_by(region, peat_type, year) %>% 
   summarize(total_emission = sum(total_emission) / 1000)
@@ -123,7 +123,7 @@ write.table(x = soil_carbon_balance_southnorth,
 
 soil_carbon_balance_total <- 
   soil_carbon_balance_southnorth %>% 
-  filter(year < 2017) %>% 
+  #filter(year < 2017) %>% 
   group_by(year) %>% 
   summarize(final_emission = sum(final_emission)) %>% 
   mutate(final_CO2 = final_emission * -CONST_C_to_CO2 / 1000)

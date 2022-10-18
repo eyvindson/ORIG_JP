@@ -13,8 +13,6 @@ source("CONSTANTS.R")
 basal_area_data <- read.table(PATH_basal_area_data, header = TRUE)
 # weather_data_aggregated <- read.table(PATH_weather_data_aggregated, header = TRUE)
 
-# Start by calculating a 30 year rolling average for mean temperature in May-Nov 1990->
-
 weather_data_30rollavg <- read.csv(PATH_weather_data_30yr_roll_avg, sep="")
 
 # Here is the actual for peat degradation. Linear equations 

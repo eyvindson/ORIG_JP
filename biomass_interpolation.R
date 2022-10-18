@@ -3,12 +3,14 @@
 
 rm(list=ls())
 source("PATHS.R")
+source("CONSTANTS.R")
+source("FUNCTIONS.R")
 
 # NFI biomass stocks
 
 years=1990:2019
 
-dir=paste(PATH_ghgi, "2019/trees/stock/remaining/", sep = "")
+dir=paste(PATH_ghgi, "2020/trees/stock/remaining/", sep = "")
 
 # Differences between the reference dates January 1, xxxx (xxxx=1990,1991,...,2013) and
 # the mean dates of NFIy measurements (y=8,9,10, 11) by region and soil type
@@ -48,13 +50,14 @@ ddiff$w12=ddiff$ddiff11/(ddiff$ddiff11-ddiff$ddiff12) # ADDED
 ddiff$w12[ddiff$ddiff11<0]=0 # ADDED
 ddiff$w12[ddiff$ddiff12 > 0]=1 
 
+
 ddiff_mod <- 
   ddiff %>% 
   filter(soil == 2) %>% 
   select(region, year, w8, w9, w10, w11, w12)
 
 # Luetaan biomassat
-tkg_ppa <- read.csv(paste(PATH_input, "basal_areas_and_biomass.csv", sep = ""))
+tkg_ppa <- read.csv2(paste(PATH_input, "basal_areas_and_biomass.csv", sep = ""), dec = ".")
 
 region_lookup <- data.frame(region = c(1, 1, 2, 2), 
                             muoto11 = c(1,2,3,4))
@@ -63,15 +66,19 @@ tkg_lookup <- data.frame(tkg = c(2,3,4,5),
                          gen_tkg = c(2, 2, 4, 4))
 
 # Otetaan painot suoraan Antin laskemista keskiarvoista
-tkg_weights <- read.csv("C:/Users/03180980/OneDrive - Valtion/R/Peatlands/Work/tkg_weights.txt", sep="")
+tkg_weights <- read.csv("C:/Users/03180980/luke-peatland/Work/tkg_weights.txt", sep="")
 
 bm <- tkg_ppa
 
 bm$keskippa <- NULL
 
-bm_melt <- melt(bm,
-                id.vars=colnames(bm[1:8]),
-                variable.name = "component", value.name ="bm")
+ bm_melt <- 
+   bm %>% 
+   pivot_longer(cols = starts_with("biom"), 
+                names_to = "component", 
+                values_to = "bm") %>% 
+   mutate(bm = as.numeric(bm))
+                  
 
 bm_melt$component <- as.numeric(sub("biom", "", bm_melt$component))
 
@@ -106,7 +113,7 @@ bm_sum <-
   mutate(bm = mean(bm), keskivuosi = mean(keskivuosi)) %>%
   ungroup() %>% 
   left_join(bm_weights) %>% 
-  mutate(bm = ifelse(is.na(painobm), bm, painobm)) %>% 
+  mutate(bm = if_else(is.na(painobm), bm, painobm)) %>% 
   select(-painobm) %>% 
   right_join(region_lookup) %>% 
   rename(species = laji1) 
@@ -130,18 +137,59 @@ ddiff <- ddiff_mod
 
 # Suoritetaan varsinainen interpolaatio
 
+vmi13_addition <-
+  bm_sum %>%
+  filter(vmi == 13) %>% 
+  right_join(region_lookup) %>% 
+  rename(year = keskivuosi) %>% 
+  group_by(region, year, tkg, species, component) %>% 
+  summarize(bm = mean(bm))
+  
 bm.interp <- 
   bm_wide %>% 
   right_join(ddiff_mod) %>% 
   mutate(bm  = vmi8*w8 + vmi9*w9 + vmi10*w10 + vmi11*w11 + vmi12*w12) %>% 
-  select(region, year, tkg, species, component, bm) 
+  select(region, year, tkg, species, component, bm) %>% 
+  filter(year < 2017) %>% 
+  rbind(vmi13_addition) %>% 
+  group_by(region, tkg, species, component) %>% 
+  complete(year = 1990:max(year) + CONST_forward_years) %>% 
+  # This bit here repeats the last true value n amount of years to the future (we don't like extrapolation)
+  mutate(bm = if_else(year > max(year) - CONST_forward_years, 
+                      bm[which(year == max(year) - CONST_forward_years)], 
+                      bm)) %>% 
+  mutate(bm = na.approx(bm)) %>% 
+  arrange(year)
 
 
-ggplot(data=bm.interp, aes(x = year, y = bm, col = as.factor(component))) +
+
+species_lookup <- data.frame(species = c(1,2,3),
+                             tree_type = c("pine", "spruce", "deciduous "))
+
+
+raw_data <-
+  bm_sum %>%
+  left_join(species_lookup) %>%
+  mutate(region = if_else(region == 1, "south", "north")) %>%
+  group_by(region, tkg, component, keskivuosi, tree_type) %>%
+  summarize(bm = mean(bm)) %>%
+  rename(year = keskivuosi)
+
+
+bm_plot <-
+  bm.interp %>%
+  mutate(region = if_else(region == 1, "south", "north")) %>%
+  left_join(species_lookup)
+
+#bm_plot <- FUNC_regionify(bm_plot)
+
+
+ggplot(data=bm_plot, aes(x = year, y = bm, col = as.factor(component))) +
   geom_point() +
   geom_path() +
   labs(title ="BM interpoloitu") +
-  facet_grid(region~species~tkg)
+  geom_point(data = raw_data, aes(x = year, y = bm, col = as.factor(component)), shape = 15, size = 2) +
+  facet_grid(region~as.factor(tree_type)~tkg)
 
 
 # Tallennetaan lajikohtaisesti erotellut

@@ -27,17 +27,17 @@ bm_conv <- data.frame(component = 1:7,
 
 # Select only the values we need
 
-biomass_crop <- 
-  BM_interp_long %>% 
-  group_by(region, tkg, component, year) %>% 
-  summarize(bm = sum(bm)) %>% 
-  ungroup() %>% 
-  rename(peat_type = tkg) %>% 
-  mutate(region = ifelse(region == 1, "south", "north")) %>% 
-  right_join(CONST_peat_lookup) %>% 
-  right_join(bm_conv) %>% 
-  filter(year %in% c(1990, 2000, 2010, 2016)) %>% 
-  select(-peat_type, -component)
+# biomass_crop <- 
+#   BM_interp_long %>% 
+#   group_by(region, tkg, component, year) %>% 
+#   summarize(bm = sum(bm)) %>% 
+#   ungroup() %>% 
+#   rename(peat_type = tkg) %>% 
+#   mutate(region = ifelse(region == 1, "south", "north")) %>% 
+#   right_join(CONST_peat_lookup) %>% 
+#   right_join(bm_conv) %>% 
+#   filter(year %in% c(1990, 2000, 2010, 2016)) %>% 
+#   select(-peat_type, -component)
 
 
 # biomass_table <- FUNC_regionify(biomass_crop, peatnaming = TRUE)
@@ -103,7 +103,7 @@ alive_litter <-
 
 # Now reading in information from ghgi
 
-ghg_path = paste(PATH_ghgi, "2019/trees/drain/remaining/litter/lulucf/", sep ="")
+ghg_path = paste(PATH_ghgi, "2021/trees/drain/remaining/litter/lulucf/", sep ="")
 
 # List all the GHGI files containing the pertinent data
 litter_file_list <- list.files(ghg_path, 
@@ -141,7 +141,7 @@ for (i in 1:length(litter_file_list)) {
   read_item$soil <- categories[4]
   read_item$gnd <- categories[5]
   
-  read_item <- mutate(read_item, year = 2020 - rev(row_number()))
+  read_item <- mutate(read_item, year = 2021 - rev(row_number()))
   
   listfill <- rbind(listfill, read_item)  
 }

@@ -15,20 +15,55 @@ areas_long <- FUNC_longify(all_areas, value_name = "area")
 
 # Lookup table for regions for converting NFI areas to South/North Finland 1,2 = south, 3,4, = north
 regsum <- data.frame(region = c(1,2,3,4),
-                     mainreg = rep(c("south", "north"), each = 2))
+                     mainreg = rep(c(1, 2), each = 2))
 
 # Filter and aggregate the data
 areas_aggregated <-
   areas_long %>%
-  filter(soil == 2, tkang %in% c(1:7), year < 2017) %>%
-  right_join(regsum) %>%
+  filter(soil == 2, tkang %in% c(1:7)) %>%
   # Combine forest peatland types 2&3 and 4&4
   mutate(tkang = ifelse(tkang == 3, 2, tkang),
-         tkang = ifelse(tkang == 5, 4, tkang)) %>%
-  group_by(mainreg, tkang, year) %>%
+         tkang = ifelse(tkang == 5, 4, tkang),
+         region = ifelse(region == 1, "south", "north")) %>%
+  group_by(region, tkang, year) %>%
   summarize(area = sum(area)) %>%
-  rename(region = mainreg, peat_type = tkang) %>%
-  filter(!is.na(peat_type))
+  rename(peat_type = tkang) %>%
+  filter(!is.na(peat_type)) 
+# %>%
+#   mutate(inventory = "new")
+
+
+
+# 
+# all_areas_old <- read.csv("C:/Users/03180980/luke-peatland/Input/lulucf_rem_kptyy_tkang_ojlk.csv", sep="", dec = ".")
+# areas_long_old <- FUNC_longify(all_areas_old, value_name = "area")
+# 
+# 
+# areas_aggregated_old <-
+#   areas_long_old %>%
+#   filter(soil == 2, tkang %in% c(1:7)) %>%
+#   right_join(regsum) %>%
+#   # Combine forest peatland types 2&3 and 4&4
+#   mutate(tkang = ifelse(tkang == 3, 2, tkang),
+#          tkang = ifelse(tkang == 5, 4, tkang)) %>%
+#   group_by(mainreg, tkang, year) %>%
+#   summarize(area = sum(area)) %>%
+#   rename(region = mainreg, peat_type = tkang) %>%
+#   filter(!is.na(peat_type)) %>%
+#   mutate(inventory = "old") %>%
+#   mutate(region = if_else(region == 1, "south", "north")) %>%
+#   rbind(areas_aggregated)
+
+
+
+if(PARAM_debug) {
+  
+  ggplot(areas_aggregated_old, aes(x = year, y = area, col = inventory)) +
+    geom_point() +
+    geom_path() +
+    facet_grid(peat_type~region)
+}
+
 
 # Save the result
 

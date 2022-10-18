@@ -73,7 +73,13 @@ customcols <- brewer.pal(n = 6, name = 'YlOrRd')[2:6]
 
 yasso_saadata <- read.csv("C:/Users/03180980/luke-peatland/Work/yasso_weather.csv", sep="")
 #yasso_saadata <- yasso_saadata %>% right_join(CONST_peat_lookup)
+yasso_saadata <-
+  yasso_saadata %>% 
+  mutate(region = if_else(region == 1, "south", "north"))
 yasso_saadata <- FUNC_regionify(yasso_saadata, peatnaming = FALSE)
+
+
+
 
 if(PARAM_scenario %in% c(2,3)) {
 
@@ -106,31 +112,26 @@ basic_weather <-  ggplot(data=weather_data, aes(x = year, y = roll_T, col = peat
   ylab("Growing season temperature (°C)") + 
   xlab("") +
   facet_wrap(~region) +
-  #ylim(0, NA) +
   scale_y_continuous(sec.axis = sec_axis(~ . * 50, name = "Precipitation (mm)"), limits = c(8,12)) +
-  #scale_color_brewer(type = "seq", palette = "Dark2") +
   theme_Publication() +
-  xlim(1990,2016) +
+  xlim(1990,2021) +
   scale_colour_manual(values = customcols) +
   # labs(color='Peatland forest type', shape = "Peatland forest type") +
   labs(color='', shape = "") +
-  #theme(legend.position = c(.1, .35),
    theme(legend.position = "top",
         axis.title.y.right = element_text(color = "white"),
         axis.text.y.right = element_text(colour = "white"),
-        axis.ticks.x =element_blank(), 
+        axis.ticks.x =element_blank(),
         axis.text.x = element_blank())
   
-  
-
-yasso_weather <- ggplot(data=yasso_saadata, aes(x = year, y = roll_T, col = "Temperature")) +
+yasso_weather <- ggplot(data=yasso_saadata, aes(x = year, y = avg_T, col = "Temperature")) +
   geom_point() +
   geom_path() +
-  geom_point(aes(x = year, y = roll_P / 200, col = "Precipitation")) +
-  geom_path(aes(x = year, y = roll_P / 200, col = "Precipitation")) +
+  geom_point(aes(x = year, y = sum_P / 200, col = "Precipitation")) +
+  geom_path(aes(x = year, y = sum_P / 200, col = "Precipitation")) +
   ylab("Annual temperature (°C)") + 
   xlab("") +
-  xlim(1990,2016) +
+  xlim(1990,2021) +
   facet_wrap(~region) +
   scale_y_continuous(sec.axis = sec_axis(~ . * 200, name = "Precipitation (mm)"), limits = c(0,4)) +
   scale_colour_manual(values = c("Temperature" = "Black", "Precipitation" = "Lightblue")) +
@@ -167,7 +168,8 @@ write.xlsx(yasso_saadata, file = "excel/fig2_2.xlsx")
 
 basal_areas <- read.table(PATH_basal_area_data, header = TRUE)
 
-basal_areas <- basal_areas %>% right_join(CONST_peat_lookup) %>%  filter(year < 2017)
+basal_areas <- basal_areas %>% right_join(CONST_peat_lookup) 
+
 basal_areas <- FUNC_regionify(basal_areas, peatnaming = T)
 
 
@@ -315,9 +317,9 @@ peat_decomp_new <-
   mutate(component = "Decomposition of litter and peat", 
          method = "New method")
 
-peat_decomp_old <- data.frame(region = rep(c("south", "north"), each = 27),
-                              year = rep(seq(1990,2016,1),  2), 
-                              value = rep(c(10.50993219, 10.28455715), each = 27), 
+peat_decomp_old <- data.frame(region = rep(c("south", "north"), each = 32),
+                              year = rep(seq(1990,max(peat_decomposition$year),1),  2), 
+                              value = rep(c(10.50993219, 10.28455715), each = 32), 
                               component = "Decomposition of litter and peat",
                               method = "GHGI method")
 litter_old <-
@@ -338,16 +340,10 @@ lognat_new_above <-
   summarize(litter = sum(litter)) %>% 
   rename(lognat = litter) 
   
-
-
-# above_melt <- melt(above_ground_litter, 
-#                    id.vars=colnames(above_ground_litter[1:3]), 
-#                    variable.name = "component", value.name = "litter")
-
-above_melt <- 
-  above_ground_litter %>% 
+above_melt <-
+  above_ground_litter %>%
   pivot_longer(cols = contains("litter"),
-                names_to = "component", 
+                names_to = "component",
                values_to = "litter")
 
 litter_new_above <-
@@ -418,8 +414,8 @@ new_net <-
   right_join(litter_new_below) %>% 
   rename(litter_below = value) %>% 
   mutate(net = peat_decomp + litter_above + litter_below) %>% 
-  select(region, year, method, net) %>% 
-  filter(year < 2017)
+  select(region, year, method, net) 
+  #filter(year < 2017)
 
 nettot <- rbind(old_net, new_net)
 
@@ -448,8 +444,8 @@ nettot_rig$method <- factor(nettot_rig$method,
 
 
 figure5 <- ggplot() +
-  geom_area(data=filter(megafig_reg, year < 2017), aes(x = year, y = value, fill = component)) +
-  geom_path(data=filter(nettot_rig, year < 2017), aes(x = year, y = net), linetype = "longdash", size = 0.8, col = "white") +
+  geom_area(data=filter(megafig_reg), aes(x = year, y = value, fill = component)) +
+  geom_path(data=filter(nettot_rig), aes(x = year, y = net), linetype = "longdash", size = 0.8, col = "white") +
   xlab("") +
   ylab(bquote("Decomposition and litter production (t "~CO[2]~ ~ha^-1~ ~y^-1~")")) + 
   facet_grid(region~method) +
@@ -484,9 +480,9 @@ ggsave(figure5,
 
 #### Kuvaaja 6
 
-lognat_area_above <- filter(lognat_new_above, year < 2017)
-lognat_area_below <- filter(lognat_new_below, year < 2017)
-lognat_area_decomp <- filter(lognat_mortality, year < 2017)
+lognat_area_above <- filter(lognat_new_above, year > 1989)
+lognat_area_below <- filter(lognat_new_below, year > 1989)
+lognat_area_decomp <- filter(lognat_mortality, year > 1989)
 
 lognat_area_above$component <- "Aboveground litter"
 lognat_area_below$component <- "Belowground litter"
@@ -528,8 +524,6 @@ figure6 <- ggplot(data=lognat_plot, aes(x = year, y = litter, fill = component))
   facet_grid(~region) +
   labs(color="Component", shape = "Component") +
   labs(fill="") +
-  #scale_fill_Publication() +
-  #scale_colour_Publication() +
   scale_fill_manual(values = c("Aboveground litter" = customcols[1], 
                                "Belowground litter" = customcols[2], 
                                "Decomposition of litter" = customcols[5])) +
@@ -571,7 +565,7 @@ total_litter <-
   right_join(total_below_ground_litter) %>% 
   right_join(peat_decomposition) %>% 
   right_join(CONST_peat_lookup) %>% 
-  filter(year < 2017) %>% 
+ # filter(year < 2017) %>% 
   select(-total_below_ground_litter, -total_above_ground_litter, -peat_name) %>% 
   rename(tree_litter = above_ground_litter_total, 
          fine_woody_litter = litter_biomass,
@@ -734,50 +728,50 @@ write.xlsx(soil_shit, file = "excel/fig8_2.xlsx")
 #            labs(color="") 
 
 
-# DEBUGGERY
+# # DEBUGGERY
+# 
+# 
+# herkkis_old <- openxlsx::read.xlsx("Work/herkkis.xlsx")
+# 
+# herkkis_read <- data.frame()
+# 
+# for (i in 0:3) {
+# 
+#   scenario_table <-
+#     read.csv(paste(i, "total.csv", sep=""), sep=";")
+# 
+#   herkkis_read <- rbind(herkkis_read, scenario_table)
+# 
+# }
+# 
+# herkkis <-
+#   herkkis_read
+# 
+# herkkis$region <- factor(herkkis$region,
+#                      levels = c("south", "north", "total"),
+#                      labels = c("Southern Finland", "Northern Finland", "Total"))
+# 
+# 
+# herkkis$scenario <- factor(herkkis$scenario,
+#                          levels = c("0", "1", "2", "3"),
+#                          labels = c("Default", "BA and harvest constant", "TEMP constant", "BA+harvest+TEMP constant"))
+# 
+# herkkis$param <- factor(herkkis$param,
+#                            levels = c("total_CO2", "lognat_CO2", "final_CO2"),
+#                            labels = c("Alive tree litter - decomposition", "Dead tree litter - decomposition",  "Total soil CO2"))
+# 
 
-
-herkkis_old <- openxlsx::read.xlsx("Work/herkkis.xlsx")
-
-herkkis_read <- data.frame()
-
-for (i in 0:3) {
-  
-  scenario_table <-
-    read.csv(paste(i, "total.csv", sep=""), sep=";") 
-    
-  herkkis_read <- rbind(herkkis_read, scenario_table)
-  
-}
-
-herkkis <-
-  herkkis_read 
-
-herkkis$region <- factor(herkkis$region,
-                     levels = c("south", "north", "total"),
-                     labels = c("Southern Finland", "Northern Finland", "Total"))
-
-
-herkkis$scenario <- factor(herkkis$scenario,
-                         levels = c("0", "1", "2", "3"),
-                         labels = c("Default", "BA and harvest constant", "TEMP constant", "BA+harvest+TEMP constant"))
-
-herkkis$param <- factor(herkkis$param,
-                           levels = c("total_CO2", "lognat_CO2", "final_CO2"),
-                           labels = c("Alive tree litter - decomposition", "Dead tree litter - decomposition",  "Total soil CO2"))
-
-
-# herkkis <- 
-#   herkkis %>% 
+# herkkis <-
+#   herkkis %>%
 #   filter(param == "Total soil CO2")
 
-
-ggplot(herkkis, aes(x = year, y = value, col = scenario)) +
-  geom_point() +
-  geom_path() +
-  xlab("") +
-  ylab(bquote("Mt "~CO[2]~"")) + 
-    facet_grid(param ~ region, scales = "free_y") +
-  scale_fill_Publication() +
-  scale_colour_Publication() +
-  theme_Publication()
+#
+# ggplot(herkkis, aes(x = year, y = value, col = scenario)) +
+#   geom_point() +
+#   geom_path() +
+#   xlab("") +
+#   ylab(bquote("Mt "~CO[2]~"")) +
+#     facet_grid(param ~ region, scales = "free_y") +
+#   scale_fill_Publication() +
+#   scale_colour_Publication() +
+#   theme_Publication()

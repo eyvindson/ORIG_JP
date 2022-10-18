@@ -1,5 +1,9 @@
 # Define any and all constants in this file. Prefix the variables with CONST_ for unambiguity.
 
+
+# How many years into the future after the last known value
+CONST_forward_years = 1
+
 # GWP ratios here
 
 CONST_gwp5_ch4 <- 25
