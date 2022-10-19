@@ -9,7 +9,7 @@ source("PATHS.R")
 # !TODO! käy läpi kaikki input tiedostot ja varmista että vuodet mätsää
 
 # Input data preparation
-source(PATH_weather_script) # leave this out if new weather data is not needed
+#source(PATH_weather_script) # leave this out if new weather data is not needed
 source(PATH_area_script)
 # The following two scripts will soon be obsolete
 source(PATH_basal_area_interpolation_script)

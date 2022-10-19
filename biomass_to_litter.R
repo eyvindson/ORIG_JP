@@ -141,10 +141,23 @@ for (i in 1:length(litter_file_list)) {
   read_item$soil <- categories[4]
   read_item$gnd <- categories[5]
   
-  read_item <- mutate(read_item, year = 2021 - rev(row_number()))
+  # Because no year data are provided, we have to assume that the last row represents the current inventory year
+  read_item <- mutate(read_item, year = 2022 - rev(row_number()))
   
   listfill <- rbind(listfill, read_item)  
 }
+
+
+###########################
+
+summarydata <- 
+  listfill %>% 
+  group_by(mort, litt, reg, soil, gnd) %>% 
+  summarize(minyear = min(year), maxyear = max(year))
+
+
+#############################
+
 
 # Calculate the litter production from logging and natural mortality
 lognat_litter <- 

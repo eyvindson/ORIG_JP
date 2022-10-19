@@ -81,8 +81,8 @@ NFI_weather <-
   summarize(avg_T = mean(temp_avg)) %>% 
   mutate(roll_T = rollmean(avg_T, 30, align="right", fill=NA)) %>% 
   filter(year > 1989) %>% 
+  rename(region = mainregion) %>% 
   select(-avg_T)
-
 
   
 # Find out which NFI sample plots have a peat type assigned

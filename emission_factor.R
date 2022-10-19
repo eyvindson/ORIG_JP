@@ -12,22 +12,14 @@ peat_decomposition <- read.table(PATH_peat_decomposition, header = TRUE) # peat 
 above_ground_litter <- read.table(PATH_above_ground_litter_total, header = TRUE) # above ground litter
 below_ground_litter <- read.table(PATH_below_ground_litter_total, header = TRUE) # below ground litter
 
-# First we sum up peat degradation and natural&logging mortality esimated with Yasso07
-# peat_decomposition_total <-
-#   peat_decomposition %>% 
-#   right_join(lognat_mortality) %>% 
-#   #mutate(total_peat_deg = peat_deg + lognat_mortality) %>% 
-#   mutate(total_peat_deg = peat_deg) %>% 
-#   select(-peat_deg, -lognat_mortality)
-  
-# Then we can calculate the emission factor per peatland type by summing up total litter production and
+# calculate the emission factor per peatland type by summing up total litter production and
 # subtracting peat degradation from the total. Note that 
 
 emission_factor <-
   above_ground_litter %>% 
   right_join(below_ground_litter) %>% 
   right_join(peat_decomposition) %>% 
-  mutate(emission_factor = total_above_ground_litter + total_below_ground_litter - peat_deg) %>% 
+  mutate(emission_factor = (total_above_ground_litter + total_below_ground_litter) - peat_deg) %>% 
   select(region, peat_type, year, emission_factor)
 
 

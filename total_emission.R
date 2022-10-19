@@ -123,7 +123,6 @@ write.table(x = soil_carbon_balance_southnorth,
 
 soil_carbon_balance_total <- 
   soil_carbon_balance_southnorth %>% 
-  #filter(year < 2017) %>% 
   group_by(year) %>% 
   summarize(final_emission = sum(final_emission)) %>% 
   mutate(final_CO2 = final_emission * -CONST_C_to_CO2 / 1000)
