@@ -11,8 +11,11 @@ CONST_gwp5_ch4 <- 25
 # This is a core variable containing the peatland forest types used in the calculations, coded as integers.
 # Numbers are not completely sequential because original types 2 & 3 were combined into 2 and 4 & 5 into 4. 
 
-CONST_peatland_types = c( 1, 2, 4, 6, 7)
+CONST_peatland_types = c(1, 2, 4, 6, 7)
 
+# For combining peatland types 2&3 and 3&4. 
+CONST_peatland_weights <- data.frame(tkg = 1:7,
+                                     area_weight = c(1.00000, 61.32428, 38.67572, 60.07019, 39.92981,  1.00000,  1.00000))
 
 # These are the constants used in the linear equations for decomposition of peat, based on tree basal area 
 # and mean air temperature  The specific equation is decomposition = (a * [basal_area] + b * [t]) - c
@@ -67,3 +70,9 @@ CONST_peat_lookup <- data.frame(
   peat_name = as.factor(c("Rhtkg", "Mtkg", "Ptkg", "Vatkg", "Jatkg")),
   peat_type = CONST_peatland_types
 )
+
+# Used for converting numeric tree types to string
+
+CONST_species_lookup <- data.frame(laji = c(1:3),
+                                   
+                                   tree_type = c("pine", "spruce", "deciduous "))

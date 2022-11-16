@@ -19,7 +19,7 @@ source("LIBRARIES.R")
   
   PARAM_debug = FALSE # A flag used for extra debugging information
   PARAM_draw_plots = TRUE # Set to true to enable drawing of various plots that will be stored under /Plots  
-  PARAM_scenario = 0# 0 = default, 1 = PPA, 2 = TEMP, 3 = BOTH
+  PARAM_scenario = 0# 0 = default, 1 = PPA, 2 = TEMP, 3 = BOTH, 4 = Loess fitted temperatures
 
     
 ###########################################################################################
@@ -40,10 +40,10 @@ source("LIBRARIES.R")
   PATH_lookup_awenparams = paste(PATH_lookup, "awen_params.csv", sep = "") # currently not used
     
 # PARAMETERS FOR INDIVIDUAL SCRIPT FILES GO HERE
-
+  
+  PATH_ba_bm_raw_data = paste(PATH_input, "basal_areas_and_biomass.csv", sep = "")
   PATH_interpolated_biomass = paste(PATH_input, "biomass_interpolated.csv", sep = "")
-  PATH_basal_area_interpolation_script = paste(PATH_main, "basal_area_interpolation.R", sep = "") 
-  PATH_biomass_interpolation_script = paste(PATH_main, "biomass_interpolation.R", sep = "")
+  PATH_ba_bm_interpolation_script = paste(PATH_main, "biomass_and_basal_area_interpolation.R", sep = "") 
   PATH_biomass_to_litter_script = paste(PATH_main, "biomass_to_litter.R", sep = "")
   PATH_basal_area_data = paste(PATH_input, "basal_areas.csv", sep = "") # basal area data file
   PATH_total_tree_litter = paste(PATH_input, "total_tree_litter.csv", sep = "") # soil litter biomasses
@@ -121,5 +121,11 @@ if (PARAM_debug) {
     PATH_below_ground_litter_basal_data = paste(PATH_scenario, "basal_areas_by_treetype_scenario.csv", sep = "") # basal area data file 
     PATH_ef_lognat_mortality = paste(PATH_scenario, "lognat_mortality_scenarioBOTH.csv", sep = "")
   }
+  
+  if (PARAM_scenario == 4) {
+    PATH_weather_data_aggregated <- paste(PATH_scenario, "loess_weather.csv", sep = "")
+    PATH_weather_data_30yr_roll_avg  <- paste(PATH_scenario, "loess_weather.csv", sep = "")
+  }
+  
 }
     

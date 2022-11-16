@@ -26,8 +26,8 @@ peat_decomposition <-
   # Finally calculate degradation using the constants provided separately. 
   # The equation used here is (a * [basal_area] + b * [t]) - c
   mutate(peat_deg = ((CONST_peat_decomposition_a * basal_area + CONST_peat_decomposition_b * roll_T)) - decomposition_constant) %>% 
-  # Convert g CO2 / m2 to ton C / ha, note 10^4 * 10^-6 = 0.01
-  mutate(peat_deg = peat_deg / CONST_C_to_CO2 * 0.01) %>% 
+  # Convert g CO2 / m2 to ton C / ha, note 10^4 * 10^-6 = 0.01. Decomposition is loss of carbon, hence negative values
+  mutate(peat_deg = peat_deg / -CONST_C_to_CO2 * 0.01) %>% 
   # Select only the end result for saving
   select(region, year, peat_type, peat_deg)
 
@@ -47,13 +47,18 @@ if(PARAM_draw_plots) {
 peat_decomposition <- left_join(peat_decomposition, CONST_peat_lookup)
 peat_decomposition <- FUNC_regionify(peat_decomposition, peatnaming = TRUE)
 
-fig <- ggplot(data=peat_decomposition, aes(x = year, y = peat_deg, col = peat_name, shape = peat_name)) +
+sumcomp <-
+  peat_decomposition %>% 
+  group_by(region, year) %>% 
+  summarize(peat_deg = mean(peat_deg))
+
+fig <- ggplot(data=peat_decomposition, aes(x = year, y = peat_deg, col = as.factor(peat_type))) +
   geom_point() +
   geom_path() +
   ylab("Tons of C / ha / y") +
   xlab("Year") +
   facet_wrap(~region) +
-  ylim(0, NA) +
+  #ylim(0, NA) +
   theme_bw() +
   theme(strip.background =element_rect(fill="white")) +
   labs(color='Peatland forest type', shape = "Peatland forest type") 

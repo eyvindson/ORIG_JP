@@ -304,15 +304,16 @@ ggsave(fig_tot_CO2_alt,
 # Figure 5
 
 #First we sum up peat degradation and natural&logging mortality esimated with Yasso07
+
 peat_decomp_new <-
   peat_decomposition %>%
   right_join(lognat_mortality) %>%
-  mutate(total_peat_deg = peat_deg + lognat_mortality) %>%
+  mutate(total_peat_deg = peat_deg - lognat_mortality) %>%
   select(-peat_deg, -lognat_mortality) %>% 
   right_join(peatland_areas) %>%
   mutate(peat_deg = total_peat_deg * proportional_area) %>%
   group_by(region, year) %>%
-  summarise(peat_deg = sum(peat_deg * 44/12)) %>% 
+  summarise(peat_deg = sum(peat_deg * -44/12)) %>% 
   rename(value = peat_deg) %>% 
   mutate(component = "Decomposition of litter and peat", 
          method = "New method")
@@ -339,11 +340,11 @@ lognat_new_above <-
   group_by(region, year) %>% 
   summarize(litter = sum(litter)) %>% 
   rename(lognat = litter) 
-  
+
 above_melt <-
   above_ground_litter %>%
   pivot_longer(cols = contains("litter"),
-                names_to = "component",
+               names_to = "component",
                values_to = "litter")
 
 litter_new_above <-
@@ -367,10 +368,10 @@ litter_new_above <-
   filter(component != "total_above_ground_litter") %>% 
   mutate(component = if_else(component == "above_ground_litter_total", "Aboveground tree litter", "Ground vegetation litter")) %>% 
   group_by(region, component)  
-  # DEBUG!!!
-  if(PARAM_debug) {
-    litter_new_above <- mutate(litter_new_above, value = first(value))
-  }
+# DEBUG!!!
+if(PARAM_debug) {
+  litter_new_above <- mutate(litter_new_above, value = first(value))
+}
 
 lognat_new_below <-
   lognat_litter %>% 
@@ -378,7 +379,7 @@ lognat_new_below <-
   filter(ground == "below") %>% 
   group_by(region, year) %>% 
   summarize(litter = sum(litter))
-  
+
 
 
 litter_new_below <-
@@ -415,7 +416,6 @@ new_net <-
   rename(litter_below = value) %>% 
   mutate(net = peat_decomp + litter_above + litter_below) %>% 
   select(region, year, method, net) 
-  #filter(year < 2017)
 
 nettot <- rbind(old_net, new_net)
 
@@ -439,7 +439,7 @@ megafig_reg$method <- factor(megafig_reg$method,
                              levels = c("New method", "GHGI method"))
 
 nettot_rig$method <- factor(nettot_rig$method, 
-                             levels = c("New method", "GHGI method"))
+                            levels = c("New method", "GHGI method"))
 
 
 
@@ -471,6 +471,9 @@ ggsave(figure5,
        dpi = CONST_dpi,
        width = 8, 
        height = 8)
+
+
+
 
 
 
@@ -562,9 +565,9 @@ total_tree_litter <- read.csv("C:/Users/03180980/luke-peatland/Input/total_tree_
 
 total_litter <-
   total_above_ground_litter %>% 
-  right_join(total_below_ground_litter) %>% 
-  right_join(peat_decomposition) %>% 
-  right_join(CONST_peat_lookup) %>% 
+  left_join(total_below_ground_litter) %>% 
+  left_join(peat_decomposition) %>% 
+  left_join(CONST_peat_lookup) %>% 
  # filter(year < 2017) %>% 
   select(-total_below_ground_litter, -total_above_ground_litter, -peat_name) %>% 
   rename(tree_litter = above_ground_litter_total, 
@@ -574,7 +577,7 @@ total_litter <-
          ground_vegetation_litter = ground_vegetation_litter * -CO2,
          fine_root_litter = fine_root_litter * -CO2,
          fine_woody_litter = fine_woody_litter * -CO2,
-         peat_deg = peat_deg * CO2)
+         peat_deg = -peat_deg * CO2)
 # MUUTA HIILIDIOKSIDI
 
 total_net <-
@@ -732,7 +735,7 @@ write.xlsx(soil_shit, file = "excel/fig8_2.xlsx")
 # 
 # 
 # herkkis_old <- openxlsx::read.xlsx("Work/herkkis.xlsx")
-# 
+#
 # herkkis_read <- data.frame()
 # 
 # for (i in 0:3) {
@@ -760,12 +763,12 @@ write.xlsx(soil_shit, file = "excel/fig8_2.xlsx")
 #                            levels = c("total_CO2", "lognat_CO2", "final_CO2"),
 #                            labels = c("Alive tree litter - decomposition", "Dead tree litter - decomposition",  "Total soil CO2"))
 # 
-
-# herkkis <-
-#   herkkis %>%
-#   filter(param == "Total soil CO2")
-
-#
+# 
+# # herkkis <-
+# #   herkkis %>%
+# #   filter(param == "Total soil CO2")
+# 
+# 
 # ggplot(herkkis, aes(x = year, y = value, col = scenario)) +
 #   geom_point() +
 #   geom_path() +

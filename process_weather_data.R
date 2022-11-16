@@ -15,7 +15,7 @@
 # 7. calculate peat degradation weather data, 30 year rolling average
 
 
-library(sf)
+#library(sf)
 
 rm(list=ls())
 
@@ -30,21 +30,13 @@ find_region <- function(point, named_shapefiles) {
                                        point, sparse = FALSE))]
 }
 
-
 NFI12_coordinates <- read.csv("C:/Users/03180980/luke-peatland/Input/Weather/vmi12_pisteet.csv")
 
 NFI12_plots <- read.table(
-  'Input/Weather//NFI12PLOTS',
+  'Input/Weather/NFI12PLOTS',
   col.names=c('region','cluster','plot','stand','centre','area','forest','drpeat','peat_type'),
   na.strings='.'
 )
-
-
-NFI12 <-
-  NFI12_plots %>% 
-  filter(drpeat == 1, forest == 1) %>% 
-  group_by(region, peat_type) %>% 
-  summarize(counts = n())
 
 # Reading the raw weather data
 weather_data <- read.table(PATH_weather_data, header = TRUE)
@@ -70,33 +62,51 @@ NFI_coords <-
 NFI_weather <-
   NFI12_plots %>% 
   filter(forest == 1, drpeat == 1) %>% 
-  select(region, cluster, plot, area, peat_type) %>% 
-  rename(lohko = cluster,
-         koeala = plot) %>% 
+  select(region, lohko = cluster, koeala = plot, area, peat_type, weight = area) %>% 
   left_join(NFI_coords) %>% 
   left_join(full_weatherdata) %>% 
   filter(month %in% c(5:10)) %>% 
   mutate(mainregion = if_else(region %in% c(1,2), "south", "north")) %>% 
   group_by(mainregion, peat_type, year) %>% 
-  summarize(avg_T = mean(temp_avg)) %>% 
+  # Due to different sampling regimes in different NFI areas, weighted mean has to be used
+  summarize(avg_T = weighted.mean(temp_avg, weight)) %>% 
   mutate(roll_T = rollmean(avg_T, 30, align="right", fill=NA)) %>% 
   filter(year > 1989) %>% 
   rename(region = mainregion) %>% 
   select(-avg_T)
 
-  
-# Find out which NFI sample plots have a peat type assigned
+# YASSO weather here
+
+y_old <-
+  yasso_weather_old %>% 
+  pivot_longer(cols = sum_P:ampli_T) %>% 
+  mutate(age = "old")
 
 
-# Summarizing the data and calculating averages
+YASSO_weather <-
+  NFI12_plots %>% 
+  filter(forest == 1, drpeat == 1) %>% 
+  select(region, lohko = cluster, koeala = plot, area, peat_type, weight = area) %>% 
+  left_join(NFI_coords) %>% 
+  left_join(full_weatherdata) %>% 
+  mutate(mainregion = if_else(region %in% c(1,2), 1, 2)) %>% 
+  group_by(lohko, year) %>% 
+  mutate(sum_P = sum(prec),
+         ampli_T = (max(temp_avg) - min(temp_avg)) /2) %>% 
+  ungroup() %>% 
+  group_by(mainregion, year) %>% 
+  summarize(sum_P = weighted.mean(sum_P, w = weight),
+            avg_T = weighted.mean(temp_avg, w = weight),
+            ampli_T = weighted.mean(ampli_T, w = weight)) %>% 
+  pivot_longer(cols = sum_P:ampli_T) %>% 
+  mutate(age = "new") %>% 
+  rename(region = mainregion) %>% 
+  rbind(y_old)
 
-# result <- 
-#   weather_data %>% 
-#   # First we add the region data
-# 
-#   group_by(region, year, month) %>% 
-#   summarise(mean_T = mean(temp_avg), sd_T = sd(temp_avg), cv = sd(temp_avg) / mean(temp_avg) * 100) %>% 
-#   arrange(year, month, region)
+ggplot(YASSO_weather, aes(x = year, y = value, col = age)) + 
+  geom_point() +
+  geom_path() +
+  facet_grid(name~region, scales = "free_y")
 
 # Save the output
 

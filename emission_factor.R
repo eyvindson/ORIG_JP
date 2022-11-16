@@ -19,7 +19,7 @@ emission_factor <-
   above_ground_litter %>% 
   right_join(below_ground_litter) %>% 
   right_join(peat_decomposition) %>% 
-  mutate(emission_factor = (total_above_ground_litter + total_below_ground_litter) - peat_deg) %>% 
+  mutate(emission_factor = (total_above_ground_litter + total_below_ground_litter) + peat_deg) %>% 
   select(region, peat_type, year, emission_factor)
 
 

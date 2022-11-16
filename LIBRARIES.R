@@ -4,6 +4,7 @@
 
 # Written by JPM 1.6.2022
 
+# Install packages to default location
 dir.create(path = Sys.getenv("R_LIBS_USER"), showWarnings = FALSE, recursive = TRUE)
 
 # List ALL the needed packages here
@@ -16,7 +17,7 @@ list.of.packages <- c(
   "roll",
   "openxlsx", 
   "RColorBrewer",
-  "sf"
+  "modelr"
 )
 
 # List all packages that are *not* installed

@@ -11,9 +11,8 @@ source("PATHS.R")
 # Input data preparation
 #source(PATH_weather_script) # leave this out if new weather data is not needed
 source(PATH_area_script)
-# The following two scripts will soon be obsolete
-source(PATH_basal_area_interpolation_script)
-source(PATH_biomass_interpolation_script)
+# Interpolate biomass and basal area
+source(PATH_ba_bm_interpolation_script)
 source(PATH_biomass_to_litter_script)
 
 ## Here starts the actual main calculation ## 

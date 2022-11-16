@@ -55,14 +55,14 @@ areas_aggregated <-
 #   rbind(areas_aggregated)
 
 
-
-if(PARAM_debug) {
-  
-  ggplot(areas_aggregated_old, aes(x = year, y = area, col = inventory)) +
-    geom_point() +
-    geom_path() +
-    facet_grid(peat_type~region)
-}
+# 
+# if(PARAM_debug) {
+#   
+#   ggplot(areas_aggregated, aes(x = year, y = area, col = inventory)) +
+#     geom_point() +
+#     geom_path() +
+#     facet_grid(peat_type~region)
+# }
 
 
 # Save the result
@@ -73,3 +73,16 @@ write.table(x = areas_aggregated,
             quote = FALSE, 
             col.names = TRUE, 
             sep =" ")
+
+
+# Calculate proportional peatland areas
+
+peatland_propoprtional_areas <-
+  areas_aggregated %>% 
+  group_by(region, year) %>% 
+  mutate(proportional_area = area/ sum(area)) %>% 
+  write.table(file = PATH_peatland_proportional_area, 
+              row.names = FALSE, 
+              quote = FALSE, 
+              col.names = TRUE, 
+              sep =" ")

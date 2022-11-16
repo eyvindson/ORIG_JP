@@ -111,14 +111,6 @@ write.table(x = soil_carbon_balance_southnorth,
             col.names = TRUE, 
             sep =" ")
 
-# Used only for plotting
-# soil_carbon_tot <-
-#   soil_carbon_balance_southnorth %>% 
-#   group_by(year) %>% 
-#   summarize(total_emission = sum(total_CO2),
-#             lognat_absolute = sum(lognat_CO2),
-#             final_emission = sum(final_CO2))
-
 # Calculate total carbon balance
 
 soil_carbon_balance_total <- 
@@ -150,4 +142,13 @@ fig <- ggplot(data=soil_carbon_balance_southnorth, aes(x = year, y = total_emiss
   theme_bw()
 ggsave(fig, filename = file.path(PATH_figures, "total_emission_southnorth.png"), dpi = 120)
 
+
+fig_tot <- 
+  ggplot(soil_carbon_balance_total, aes(x = year, y = final_emission)) + 
+  geom_point() +
+  geom_path() +
+  ylab("kt of C / y") +
+  labs(title = "Total Soil carbon balance") +
+  theme_bw() 
+  ggsave(fig_tot, filename = file.path(PATH_figures, "total_emission_total.png"), dpi = 120)
 }

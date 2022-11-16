@@ -147,18 +147,6 @@ for (i in 1:length(litter_file_list)) {
   listfill <- rbind(listfill, read_item)  
 }
 
-
-###########################
-
-summarydata <- 
-  listfill %>% 
-  group_by(mort, litt, reg, soil, gnd) %>% 
-  summarize(minyear = min(year), maxyear = max(year))
-
-
-#############################
-
-
 # Calculate the litter production from logging and natural mortality
 lognat_litter <- 
   listfill %>% 
@@ -262,3 +250,11 @@ write.table(x = dead_litter,
 #          mortality = "alive")
 
   
+GHGI_litter <-
+  lognat_litter %>% 
+  group_by(region, year, ground) %>% 
+  summarize(litter_production = sum(litter))
+  
+  
+  listfill %>%
+  filter(soil == "org", year > 1989)
