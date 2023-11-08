@@ -1,0 +1,743 @@
+rm(list=ls())
+
+source("PATHS.R")
+source("FUNCTIONS.R")
+source("CONSTANTS.R")
+
+library(ggpubr)
+
+CONST_dpi = 600
+
+peat_decomposition <- read.table(PATH_peat_decomposition, header = TRUE) # peat degradation
+basal_area_data <- read.table(PATH_basal_area_data, header = TRUE)
+above_ground_litter <- read.table(PATH_above_ground_litter_total, header = TRUE) # above ground litter
+below_ground_litter <- read.table(PATH_below_ground_litter_total, header = TRUE) # below ground litter
+lognat_mortality <- read.table(PATH_ef_lognat_mortality, header = TRUE) # logging and natural mortality
+tree_litter_data <- read.table(PATH_total_tree_litter, header = TRUE) 
+lognat_litter <- read.table("work/dead_litter_2.csv", header = TRUE)
+peatland_areas <- read.table(PATH_peatland_proportional_area, header = TRUE)
+GHGI_litter <- read.delim("work/GHGI_litter.txt")
+tree_uptake <- read.csv("C:/Users/03180980/luke-peatland/Work/tree_uptake.txt", sep=";")
+
+
+theme_Publication <- function(base_size=12) {
+  library(ggthemes)
+  (theme_foundation(base_size=base_size)
+    + theme(plot.title = element_text(face = "bold",
+                                      size = rel(1.2), hjust = 0.5),
+            text = element_text(),
+            panel.background = element_rect(colour = NA),
+            plot.background = element_rect(colour = NA),
+            axis.title.y = element_text(angle=90,vjust =2),
+            axis.title.x = element_text(vjust = -0.2),
+            axis.text = element_text(), 
+            axis.line = element_line(colour="black"),
+            axis.ticks = element_line(),
+            panel.grid.major=element_blank(),
+            panel.grid.minor=element_blank(),
+            panel.spacing = unit(0.5, "cm"),
+            legend.key = element_rect(colour = NA),
+            #legend.position = "bottom",
+            #legend.direction = "horizontal",
+           # legend.key.size= unit(0.01, "cm"),
+            legend.spacing = unit(0, "cm"),
+            #legend.box.spacing = unit(0, "cm"),
+            legend.title = element_text(face="italic"),
+            strip.background=element_blank(),
+            strip.text = element_text(face="bold")
+    ))
+  
+}
+
+scale_fill_Publication <- function(...){
+  library(scales)
+  discrete_scale("fill","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+  
+}
+
+scale_colour_Publication <- function(...){
+  library(scales)
+  discrete_scale("colour","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+  
+}
+
+customcols <- brewer.pal(n = 6, name = 'YlOrRd')[2:6]
+
+
+#######################################
+
+# FIGURE 2 WEATHER
+
+# TODO Lisää sadanta, koko vuoden lämpötila, lämpötila-amplitudi (MAX-MIN ei kahdella jaettuna)
+
+yasso_saadata <- read.csv("C:/Users/03180980/luke-peatland/Work/yasso_weather.csv", sep="")
+#yasso_saadata <- yasso_saadata %>% right_join(CONST_peat_lookup)
+yasso_saadata <- FUNC_regionify(yasso_saadata, peatnaming = FALSE)
+
+if(PARAM_scenario %in% c(2,3)) {
+
+yasso_saadata <-
+  yasso_saadata %>%
+  group_by(region) %>%
+  mutate(roll_T = first(roll_T),
+         roll_P = first(roll_P))
+
+}
+
+# yasso_saadata <- 
+#   yasso_saadata %>% 
+#   pivot_longer(cols = c(roll_T, roll_P, roll_A), names_to = "stat", values_to = "value")
+
+
+#weather_data <- read.csv("C:/Users/03180980/luke-peatland/Input/Weather/weather_data_by_peattype_scenario.csv", sep="")
+weather_data <- read.csv(PATH_weather_data_30yr_roll_avg, sep="")
+weather_data <- weather_data %>% right_join(CONST_peat_lookup)
+weather_data <- FUNC_regionify(weather_data, peatnaming = TRUE)
+
+
+# weather_data$peat_type <- factor(weather_data$peat_type,
+#                                  levels = CONST_peat_lookup$peat_type,
+#                                  labels = CONST_peat_lookup$peat_name)
+
+
+basic_weather <-  ggplot(data=weather_data, aes(x = year, y = roll_T, col = peat_name)) +
+  geom_point() +
+  geom_path() +
+  ylab("Growing season temperature (°C)") + 
+  xlab("") +
+  facet_wrap(~region) +
+  #ylim(0, NA) +
+  scale_y_continuous(sec.axis = sec_axis(~ . * 50, name = "Precipitation (mm)"), limits = c(8,12)) +
+  #scale_color_brewer(type = "seq", palette = "Dark2") +
+  theme_Publication() +
+  xlim(1990,2016) +
+  scale_colour_manual(values = customcols) +
+  # labs(color='Peatland forest type', shape = "Peatland forest type") +
+  labs(color='', shape = "") +
+  #theme(legend.position = c(.1, .35),
+   theme(legend.position = "top",
+        axis.title.y.right = element_text(color = "white"),
+        axis.text.y.right = element_text(colour = "white"),
+        axis.ticks.x =element_blank(), 
+        axis.text.x = element_blank())
+  
+  
+
+yasso_weather <- ggplot(data=yasso_saadata, aes(x = year, y = roll_T, col = "Temperature")) +
+  geom_point() +
+  geom_path() +
+  geom_point(aes(x = year, y = roll_P / 200, col = "Precipitation")) +
+  geom_path(aes(x = year, y = roll_P / 200, col = "Precipitation")) +
+  ylab("Annual temperature (°C)") + 
+  xlab("") +
+  xlim(1990,2016) +
+  facet_wrap(~region) +
+  scale_y_continuous(sec.axis = sec_axis(~ . * 200, name = "Precipitation (mm)"), limits = c(0,4)) +
+  scale_colour_manual(values = c("Temperature" = "Black", "Precipitation" = "Lightblue")) +
+  theme_Publication() +
+  facet_grid(~region) +
+  labs(color="") +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_blank(),
+    # legend.position = c(.85, .84)
+     legend.position = "bottom"
+  )
+
+#figure2 <- basic_weather / yasso_weather
+
+figure2 <- ggarrange(basic_weather, yasso_weather, nrow = 2, widths = c(1,1))
+figure2
+
+ggsave(figure2, 
+       filename = file.path(PATH_pubfigures, "figure2.png"), 
+       dpi = CONST_dpi,
+       width = 6,
+       height = 7)
+
+
+write.xlsx(weather_data, file = "excel/fig2.xlsx")
+write.xlsx(yasso_saadata, file = "excel/fig2_2.xlsx")
+
+
+#######################################
+
+# FIGURE 3 Basal areas
+
+
+basal_areas <- read.table(PATH_basal_area_data, header = TRUE)
+
+basal_areas <- basal_areas %>% right_join(CONST_peat_lookup)
+basal_areas <- FUNC_regionify(basal_areas, peatnaming = T)
+
+
+figure3 <- ggplot(data=basal_areas, aes(x = year, y = basal_area, col = peat_name)) +
+  geom_point() +
+  geom_path() +
+  ylab(bquote("Basal area ("~m^2~ ~ha^-1~")")) + 
+  xlab("") +
+  scale_colour_manual(values = customcols) +
+  facet_wrap(~region) +
+  #ylim(0, NA) +
+  labs(color="") +
+  theme_Publication() +
+  theme(legend.position = "bottom",
+        plot.margin = unit(c(0,1,0,0.5), "cm")) 
+
+
+ggsave(figure3, filename = file.path(PATH_pubfigures, "figure3.png"), 
+       dpi = CONST_dpi,
+       width = 6,
+       height = 3.5)
+
+figure3
+
+write.xlsx(basal_areas, file = "excel/fig3.xlsx")
+
+
+#######################################
+
+# FIGURE 4 TOTALS
+
+# TODO - laita GHGi "vaimeammin"
+# Kokeile laittaa Tot/ES/PS samaan
+# Kokeile laittaa koko maa
+
+soil_carbon_balance_total <- read.table(PATH_total_soil_carbon_total, header = TRUE)
+soil_carbon_balance_southnorth <- read.table(PATH_total_soil_carbon, header = TRUE)
+GHGI_co2 <- read.delim(paste(PATH_input, "GHGI_co2.txt", sep = ""))
+GHGI_co2$Method = "GHGI method"
+GHGI_co2 <- rename(GHGI_co2, final_CO2 = ghgi_co2)
+
+soil_comp <- 
+  soil_carbon_balance_total %>% 
+  select(year, final_CO2) %>% 
+  mutate(Method = "New method") %>% 
+  rbind(., GHGI_co2)
+
+fig_tot_CO2 <- ggplot(data=soil_comp, aes(x = year, y = final_CO2, col = Method)) +
+  geom_point() +
+  geom_path() +
+  ylab(bquote("Soil" ~CO[2]~ "balance (Mt "~CO[2]~")")) +
+  xlab("") +
+  labs(title = "Whole country") +
+  scale_fill_Publication() +
+  scale_colour_Publication() +
+  theme_Publication() +
+  theme(legend.position = c(0.73, 0.85)) +
+  labs(color="") 
+
+
+new_co2_reg <-
+  soil_carbon_balance_southnorth %>% 
+  select(region, year, final_CO2) %>% 
+  rename(CO2 = final_CO2) %>% 
+  mutate(method = "New method")
+
+
+new_co2_reg <- FUNC_regionify(new_co2_reg, revreg = TRUE)
+
+GHGI_co2_reg <- read.delim(paste(PATH_input, "GHGI_co2_reg.txt", sep = ""))
+GHGI_co2_reg$method <- "GHGI method"
+GHGI_co2_reg <- FUNC_regionify(GHGI_co2_reg, revreg = FALSE)
+co2_reg <- rbind(new_co2_reg, GHGI_co2_reg)
+
+
+fig_tot_CO2_reg <- ggplot(data=co2_reg, aes(x = year, y = CO2, col = method)) +
+  geom_point() +
+  geom_path() +
+  ylab("") +
+  xlab("") +
+  facet_grid(region~.) +
+  scale_fill_Publication() +
+  scale_colour_Publication() +
+  labs(title = "Regions") +
+  theme_Publication() +
+  labs(color="") +
+  theme(legend.position = "none")
+
+
+huu <-
+  co2_reg %>% 
+  rename(Method = method) %>% 
+  right_join(soil_comp)
+
+huu$Method <- factor(huu$Method,
+                     levels = c("New method", "GHGI method"),
+                     labels = c("New Method", "GHGI method"))
+
+fig_tot_CO2_alt <- ggplot() +
+  geom_density(data=huu, stat = "identity", aes(x = year, y = final_CO2), alpha = 0.5, fill = "lightgrey", col = "lightgrey") +
+  geom_point(data=huu, aes(x = year, y = CO2, col = region)) +
+  geom_path(data=huu, aes(x = year, y = CO2, col = region)) +
+  ylab(bquote("Soil" ~CO[2]~ "balance (Mt "~CO[2]~")")) +
+  xlab("") +
+  facet_grid(~Method) +
+  scale_colour_manual(values = c("Southern Finland" = customcols[1],
+                                 "Northern Finland" = customcols[5])) +
+  #scale_fill_Publication() +
+  #scale_colour_Publication() +
+  theme_Publication() +
+  labs(color= "") +
+  theme(legend.position = c(.15, .85))
+
+fig_tot_CO2_alt
+
+write.xlsx(huu, file = "excel/fig4.xlsx")
+
+# figure4 <- ggarrange(fig_tot_CO2, fig_tot_CO2_reg)
+# figure4
+
+ggsave(fig_tot_CO2_alt, 
+       filename = file.path(PATH_pubfigures, "figure4.png"), 
+       dpi = CONST_dpi, 
+       width = 6,
+       height = 4)
+
+# figure4
+ 
+
+#######################################
+
+# Figure 5
+
+#First we sum up peat degradation and natural&logging mortality esimated with Yasso07
+peat_decomp_new <-
+  peat_decomposition %>%
+  right_join(lognat_mortality) %>%
+  mutate(total_peat_deg = peat_deg + lognat_mortality) %>%
+  select(-peat_deg, -lognat_mortality) %>% 
+  right_join(peatland_areas) %>%
+  mutate(peat_deg = total_peat_deg * proportional_area) %>%
+  group_by(region, year) %>%
+  summarise(peat_deg = sum(peat_deg * 44/12)) %>% 
+  rename(value = peat_deg) %>% 
+  mutate(component = "Decomposition of litter and peat", 
+         method = "New method")
+
+peat_decomp_old <- data.frame(region = rep(c("south", "north"), each = 27),
+                              year = rep(seq(1990,2016,1),  2), 
+                              value = rep(c(10.50993219, 10.28455715), each = 27), 
+                              component = "Decomposition of litter and peat",
+                              method = "GHGI method")
+litter_old <-
+  GHGI_litter %>% 
+  filter(ground == "below") %>% 
+  select(-ground) %>% 
+  mutate(litter_production = litter_production * -(44/12)) %>% 
+  rename(value = litter_production) %>% 
+  select(region, year, value) %>% 
+  mutate(component = "Belowground arboreal litter",
+         method = "GHGI method") 
+
+lognat_new_above <-
+  lognat_litter %>% 
+  # Filter in only litter types above ground, exclude dom and under vegetation
+  filter(ground == "above") %>% 
+  group_by(region, year) %>% 
+  summarize(litter = sum(litter)) %>% 
+  rename(lognat = litter) 
+  
+
+
+# above_melt <- melt(above_ground_litter, 
+#                    id.vars=colnames(above_ground_litter[1:3]), 
+#                    variable.name = "component", value.name = "litter")
+
+above_melt <- 
+  above_ground_litter %>% 
+  pivot_longer(cols = contains("litter"),
+                names_to = "component", 
+               values_to = "litter")
+
+litter_new_above <-
+  above_melt %>% 
+  right_join(peatland_areas) %>%
+  mutate(litter = litter * proportional_area) %>%
+  group_by(region, year, component) %>%
+  summarise(litter = sum(litter)) %>% 
+  right_join(lognat_new_above) %>% 
+  mutate(value = (litter + lognat) * -(44/12)) %>% 
+  mutate(method = "New method") %>% 
+  select(region, year, component, value, method)
+
+
+litter_new_above_tot <-
+  litter_new_above %>% 
+  filter(component == "total_above_ground_litter")
+
+litter_new_above <-
+  litter_new_above %>% 
+  filter(component != "total_above_ground_litter") %>% 
+  mutate(component = if_else(component == "above_ground_litter_total", "Aboveground tree litter", "Ground vegetation litter")) %>% 
+  group_by(region, component)  
+  # DEBUG!!!
+  if(PARAM_debug) {
+    litter_new_above <- mutate(litter_new_above, value = first(value))
+  }
+
+lognat_new_below <-
+  lognat_litter %>% 
+  # Filter in only litter types above ground, exclude dom and under vegetation
+  filter(ground == "below") %>% 
+  group_by(region, year) %>% 
+  summarize(litter = sum(litter))
+  
+
+
+litter_new_below <-
+  below_ground_litter %>% 
+  select(region, year, peat_type, total_below_ground_litter) %>% 
+  right_join(peatland_areas) %>%
+  mutate(total_below_ground_litter = total_below_ground_litter * proportional_area) %>%
+  group_by(region, year) %>%
+  summarise(total_below_ground_litter = sum(total_below_ground_litter)) %>% 
+  right_join(lognat_new_below) %>% 
+  mutate(total_below_ground_litter = (total_below_ground_litter + litter) * -(44/12)) %>% 
+  select(-litter) %>% 
+  rename(value = total_below_ground_litter) %>% 
+  mutate(component = "Belowground arboreal litter",
+         method = "New method") 
+
+old_net <-
+  peat_decomp_old %>% 
+  rename(peat_decomp = value) %>% 
+  select(-component) %>% 
+  right_join(litter_old) %>% 
+  rename(litter = value) %>% 
+  mutate(net = peat_decomp + litter) %>% 
+  select(region, year, method, net)
+
+new_net <-
+  peat_decomp_new %>% 
+  rename(peat_decomp = value) %>% 
+  select(-component) %>% 
+  right_join(litter_new_above_tot) %>% 
+  select(-component) %>% 
+  rename(litter_above = value) %>% 
+  right_join(litter_new_below) %>% 
+  rename(litter_below = value) %>% 
+  mutate(net = peat_decomp + litter_above + litter_below) %>% 
+  select(region, year, method, net) %>% 
+  filter(year < 2017)
+
+nettot <- rbind(old_net, new_net)
+
+nettot_rig <- FUNC_regionify(nettot)
+nettot_rig$component <- NA
+
+megafig <- rbind(peat_decomp_old, peat_decomp_new, litter_old, litter_new_above, litter_new_below)
+
+megafig_reg <- FUNC_regionify(megafig, revreg = TRUE)
+
+
+
+
+fct_relevel(megafig_reg$component, c("Aboveground tree litter", 
+                                     "Belowground arboreal litter", 
+                                     "Ground vegetation litter",
+                                     "Decomposition of litter and peat"))
+
+
+megafig_reg$method <- factor(megafig_reg$method, 
+                             levels = c("New method", "GHGI method"))
+
+nettot_rig$method <- factor(nettot_rig$method, 
+                             levels = c("New method", "GHGI method"))
+
+
+
+figure5 <- ggplot() +
+  geom_area(data=filter(megafig_reg, year < 2017), aes(x = year, y = value, fill = component)) +
+  geom_path(data=filter(nettot_rig, year < 2017), aes(x = year, y = net), linetype = "longdash", size = 0.8, col = "white") +
+  xlab("") +
+  ylab(bquote("Decomposition and litter production (t "~CO[2]~ ~ha^-1~ ~y^-1~")")) + 
+  facet_grid(region~method) +
+  labs(fill="") +
+  # scale_fill_Publication() +
+  # scale_colour_Publication() +
+  scale_fill_manual(values = c("Aboveground tree litter" = customcols[1], 
+                               "Belowground arboreal litter" = customcols[2], 
+                               "Ground vegetation litter" = customcols[3],
+                               "Decomposition of litter and peat" = customcols[5])) +
+  theme_Publication() +
+  theme(legend.position = "bottom", 
+        plot.margin = unit(c(0,1,0,0.5), "cm"))
+
+figure5
+
+write.xlsx(megafig_reg, file = "excel/fig5.xlsx")
+write.xlsx(nettot_rig, file = "excel/fig5_2.xlsx")
+
+
+ggsave(figure5, 
+       filename = file.path(PATH_pubfigures, "figure5.png"), 
+       dpi = CONST_dpi,
+       width = 8, 
+       height = 8)
+
+
+
+
+#######################################
+
+
+#### Kuvaaja 6
+
+lognat_area_above <- filter(lognat_new_above, year < 2017)
+lognat_area_below <- filter(lognat_new_below, year < 2017)
+lognat_area_decomp <- filter(lognat_mortality, year < 2017)
+
+lognat_area_above$component <- "Aboveground litter"
+lognat_area_below$component <- "Belowground litter"
+lognat_area_decomp$component <- "Decomposition of litter"
+
+lognat_area_above <- rename(lognat_area_above, litter = lognat)
+lognat_area_decomp <- rename(lognat_area_decomp, litter = lognat_mortality)
+
+lognat_area_above$litter <- lognat_area_above$litter * -(44/12)
+lognat_area_below$litter <- lognat_area_below$litter * -(44/12)
+lognat_area_decomp$litter <- lognat_area_decomp$litter * (44/12)
+
+
+lognat_plot <- rbind(lognat_area_above, lognat_area_below, lognat_area_decomp)
+lognat_plot <- FUNC_regionify(lognat_plot)
+
+# Calculate net
+
+lognat_net <-
+  lognat_area_above %>% 
+  select(-component) %>% 
+  rename(abv = litter) %>% 
+  right_join(lognat_area_below) %>% 
+  select(-component) %>% 
+  rename(bel = litter) %>%
+  right_join(lognat_area_decomp) %>% 
+  select(-component) %>% 
+  mutate(lognet = abv+bel+litter) %>% 
+  select(region, year, lognet) %>% 
+  mutate(component = NA)
+
+lognat_net <- FUNC_regionify(lognat_net)
+
+figure6 <- ggplot(data=lognat_plot, aes(x = year, y = litter, fill = component)) +
+  geom_area() +
+  geom_path(data = lognat_net, aes(x = year, y = lognet),linetype = "longdash", size = 0.8, col = "white") +
+  xlab("") +
+  ylab(bquote("Decomposition and litter input (t "~CO[2]~ ~ha^-1~ ~y^-1~")")) + 
+  facet_grid(~region) +
+  labs(color="Component", shape = "Component") +
+  labs(fill="") +
+  #scale_fill_Publication() +
+  #scale_colour_Publication() +
+  scale_fill_manual(values = c("Aboveground litter" = customcols[1], 
+                               "Belowground litter" = customcols[2], 
+                               "Decomposition of litter" = customcols[5])) +
+  theme_Publication() +
+  theme(legend.position = "bottom")
+
+figure6
+
+write.xlsx(lognat_plot, file = "excel/fig6.xlsx")
+write.xlsx(lognat_net, file = "excel/fig6_2.xlsx")
+
+
+ggsave(figure6, 
+       filename = file.path(PATH_pubfigures, "figure6.png"), 
+       dpi = CONST_dpi, 
+       width = 8,
+       height = 5)
+
+
+
+
+#######################################
+
+
+### Figure 7
+
+
+# belowground arboreal litter, ground vegetation litter decomposition of litter and peat
+
+CO2 <- 44/12
+
+peat_decomposition <- read.table(PATH_peat_decomposition, header = TRUE) # peat degradation
+total_above_ground_litter <- read.table(PATH_above_ground_litter_total, header = TRUE) # above ground litter
+total_below_ground_litter <- read.table(PATH_below_ground_litter_total, header = TRUE) # below ground litter
+total_tree_litter <- read.csv("C:/Users/03180980/luke-peatland/Input/total_tree_litter.csv", sep="")
+
+total_litter <-
+  total_above_ground_litter %>% 
+  right_join(total_below_ground_litter) %>% 
+  right_join(peat_decomposition) %>% 
+  right_join(CONST_peat_lookup) %>% 
+  filter(year < 2017) %>% 
+  select(-total_below_ground_litter, -total_above_ground_litter, -peat_name) %>% 
+  rename(tree_litter = above_ground_litter_total, 
+         fine_woody_litter = litter_biomass,
+         fine_root_litter = fine_root_litter_production) %>% 
+  mutate(tree_litter = tree_litter * -CO2,
+         ground_vegetation_litter = ground_vegetation_litter * -CO2,
+         fine_root_litter = fine_root_litter * -CO2,
+         fine_woody_litter = fine_woody_litter * -CO2,
+         peat_deg = peat_deg * CO2)
+# MUUTA HIILIDIOKSIDI
+
+total_net <-
+  total_litter %>% 
+  group_by(region, year) %>% 
+  mutate(net = tree_litter + ground_vegetation_litter + fine_root_litter + fine_woody_litter + peat_deg) %>% 
+  right_join(CONST_peat_lookup) %>% 
+  select(region, year, peat_name, net)
+
+
+total_net <- FUNC_regionify(total_net, peatnaming = TRUE)
+
+total_litter_cats <- melt(total_litter, 
+                          id.vars = colnames(total_litter[1:3]), 
+                          variable.name = "category", value.name = "litter")
+
+
+total_litter_cats <- 
+  total_litter_cats %>% 
+  filter(category != "above_ground_litter_total") %>% 
+  right_join(CONST_peat_lookup)
+
+total_litter_cats <- FUNC_regionify(total_litter_cats, peatnaming = TRUE, revreg = TRUE)
+
+total_litter_cats$category <- factor(total_litter_cats$category, 
+                                     levels = c("tree_litter",
+                                                "ground_vegetation_litter", 
+                                                "fine_root_litter", 
+                                                "fine_woody_litter",
+                                                "peat_deg"),
+                                     labels = c("Aboveground tree litter",
+                                                "Ground vegetation litter", 
+                                                "Arboreal fine root litter", 
+                                                "Tree coarse root litter",
+                                                "Decomposition of litter and peat"))
+
+figure7 <- ggplot(data=total_litter_cats, aes(x = year, y = litter)) +
+  geom_area(aes(fill = category)) +
+  ylab(bquote("Decomposition and litter production (t "~CO[2]~ ~ha^-1~ ~y^-1~")")) + 
+  xlab("") +
+  geom_path(data = total_net, aes(x=year, y=net), linetype = "longdash", size = 0.8, col = "white") +
+  facet_grid(region ~ peat_name) +
+  labs(fill="") +
+  scale_fill_manual(values = c("Aboveground tree litter" = customcols[1],
+                               "Ground vegetation litter" = customcols[2], 
+                               "Arboreal fine root litter" = customcols[3], 
+                               "Tree coarse root litter" = customcols[4],
+                               "Decomposition of litter and peat" = customcols[5])) +
+  theme_Publication() +
+  theme(legend.position = "bottom")
+
+figure7
+
+ggsave(figure7, 
+       filename = file.path(PATH_pubfigures, "figure7.png"), 
+       dpi = CONST_dpi,
+       width = 8,
+       height = 4, 
+       scale = 1.5)
+
+write.xlsx(total_litter_cats, file = "excel/fig7.xlsx")
+write.xlsx(total_net, file = "excel/fig7_2.xlsx")
+
+
+
+# KUVAAJA 8
+
+soil_shit <-
+  soil_carbon_balance_southnorth %>% 
+  select(region, year, final_CO2)
+
+megtot <- 
+  soil_shit %>% 
+  right_join(tree_uptake) %>% 
+  mutate(net_balance = tree_uptake + final_CO2) %>% 
+  filter(!is.na(final_CO2)) 
+
+
+megtot <- FUNC_regionify(megtot, revreg = FALSE)
+soil_shit <- FUNC_regionify(soil_shit, revreg = FALSE)
+
+
+figure8 <- ggplot() +
+  geom_bar(data=megtot, stat = "identity", aes(x = year, y = tree_uptake, fill = "Tree CO2 uptake"), alpha = 0.5) +
+  geom_point(data=megtot, aes(x = year, y = net_balance, col = "Ecosystem CO2 balance")) +
+  geom_path(data=megtot, aes(x = year, y = net_balance, col = "Ecosystem CO2 balance")) +
+  geom_point(data=soil_shit, aes(x = year, y = final_CO2, col = "Soil CO2 balance")) +
+  geom_path(data=soil_shit, aes(x = year, y = final_CO2, col = "Soil CO2 balance")) +
+  scale_color_manual(values = c("Ecosystem CO2 balance" = customcols[1],
+                               "Soil CO2 balance" = customcols[5])) +
+  scale_fill_manual(values = c("Tree CO2 uptake" = "lightgrey")) +
+  ylab(bquote("" ~CO[2]~ "balance (Mt "~CO[2]~")")) +
+  xlab("") +
+  # scale_colour_manual(values = c("Tree net CO2 uptake" = "gray",
+  #                                "Ecosystem CO2 balance" = "red")) +
+  # scale_fill_manual(values = c("Tree net CO2 uptake" = NA)) +
+  facet_grid(~region) +
+  labs(fill = "", colour = "") +
+  #guides( ) +
+  guides(color = guide_legend(order = 1),
+         fill = guide_legend(order = 2)) +
+  theme_Publication()  +
+  theme(legend.position = c(.85, .86),
+        legend.margin = margin(-0.5,0,0,0, unit="cm"))
+
+figure8
+
+ggsave(figure8, 
+       filename = file.path(PATH_pubfigures, "figure8.png"), 
+       dpi = CONST_dpi,
+       width = 8,
+       height = 5)
+
+
+write.xlsx(megtot, file = "excel/fig8.xlsx")
+write.xlsx(soil_shit, file = "excel/fig8_2.xlsx")
+
+
+ # theme(legend.position = "none")
+# Teamsin Tulokset - kansiossa löytyy puuston nielu
+# Etelä/Pohjois-Suomi jaolla
+# Tree net CO2
+# New soil CO2 balance
+# # New ecosystem CO2 balance
+#   
+#   ggplot() +
+#     geom_bar(data=megtot, stat = "identity", aes(x = year, y = tree_uptake, col = "Tree net CO2 uptake", fill = "gray")) +
+#     geom_point(data=megtot, aes(x = year, y = net_balance, col = "Ecosystem CO2 balance", fill = NA)) +
+#     geom_path(data=megtot, aes(x = year, y = net_balance, col = "Ecosystem CO2 balance", fill = NA)) +
+#     geom_point(data=soil_shit, aes(x = year, y = final_CO2, col = "Soil CO2 balance", fill = NA)) +
+#     geom_path(data=soil_shit, aes(x = year, y = final_CO2, col = "Soil CO2 balance", fill = NA)) +
+#     ylab("") +
+#     xlab("") +
+#     labs(color="Component"
+#          facet_grid(~region) +
+#            theme_Publication()  +
+#            labs(color="") 
+
+
+# DEBUGGERY
+
+herkkis$region <- factor(herkkis$region,
+                     levels = c("Southern Finland", "Northern Finland", "Total"),
+                     labels = c("Southern Finland", "Northern Finland", "Total"))
+
+
+herkkis$scenario <- factor(herkkis$scenario,
+                         levels = c("Default", "PPA constant", "TEMP constant", "BOTH constant"),
+                         labels = c("Default", "PPA constant", "TEMP constant", "BOTH constant"))
+
+
+ggplot(herkkis, aes(x = year, y = value, col = scenario)) +
+  geom_point() +
+  geom_path() +
+  xlab("") +
+  ylab("") +
+  facet_grid(component ~ region, scales = "free_y") +
+  scale_fill_Publication() +
+  scale_colour_Publication() +
+  theme_Publication() 

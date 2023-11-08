@@ -10,11 +10,6 @@ source("CONSTANTS.R")
 # Read in the basal area data. in m2/ha
 basal_area_data <- read.table(PATH_basal_area_data, header = TRUE)
 
-# basal_avg <-
-#   basal_area_data %>% 
-#   group_by(region, peat_type) %>% 
-#   summarize(basal_area = mean(basal_area))
-
 # Calculate ground vegetation biomass
 
 ground_vegetation_litter <-
@@ -37,15 +32,6 @@ above_ground_litter <-
   filter(ground == "above", litter_type %ni% c("DOM", "under_vegetation")) %>% 
   group_by(region, year, peat_type) %>% 
   summarize(above_ground_litter_total = sum(litter_biomass))
-
-# Sum up the logging and natural mortality. Removed for now.
-
-# litter_logging_mortality <-
-#   tree_litter_data %>% 
-#   # Again, we're only interested in above ground litter. Furthermore, we want litter produced via natural causes and logging
-#   filter(ground == "above" & mortality %in% c("logging", "natural")) %>% 
-#   group_by(region, year, peat_type) %>% 
-#   summarize(logging_mortality = sum(litter_biomass)) 
 
 # Now calculate the total above ground litter production rate as ton C / ha / y
 # by summing up the under vegetation litter and soil litter and weighing the sum by proportional areas of different peatland types

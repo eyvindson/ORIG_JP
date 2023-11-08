@@ -1,0 +1,85 @@
+# Process area data 
+# 
+# This script reads area data from the inventory, transforms and aggregates the needed values for this calculation
+
+rm(list=ls())
+
+source("PATHS.R")
+source("FUNCTIONS.R")
+# Process area data
+
+# Load area data, convert to "long"
+
+all_areas <- read.table(PATH_ghgi_area, header = TRUE)
+areas_long <- FUNC_longify(all_areas, value_name = "area")
+
+# Lookup table for regions for converting NFI areas to South/North Finland 1,2 = south, 3,4, = north
+regsum <- data.frame(region = c(1,2,3,4),
+                     mainreg = rep(c(1, 2), each = 2))
+
+# Filter and aggregate the data
+areas_aggregated <-
+  areas_long %>%
+  filter(soil == 2, tkang %in% c(1:7)) %>%
+  # Combine forest peatland types 2&3 and 4&4
+  mutate(tkang = ifelse(tkang == 3, 2, tkang),
+         tkang = ifelse(tkang == 5, 4, tkang),
+         region = ifelse(region == 1, "south", "north")) %>%
+  group_by(region, tkang, year) %>%
+  summarize(area = sum(area)) %>%
+  rename(peat_type = tkang) %>%
+  filter(!is.na(peat_type)) 
+
+
+# 
+# all_areas_old <- read.csv("C:/Users/03180980/luke-peatland/Input/lulucf_rem_kptyy_tkang_ojlk.csv", sep="", dec = ".")
+# areas_long_old <- FUNC_longify(all_areas_old, value_name = "area")
+# 
+# 
+# areas_aggregated_old <-
+#   areas_long_old %>%
+#   filter(soil == 2, tkang %in% c(1:7)) %>%
+#   right_join(regsum) %>%
+#   # Combine forest peatland types 2&3 and 4&4
+#   mutate(tkang = ifelse(tkang == 3, 2, tkang),
+#          tkang = ifelse(tkang == 5, 4, tkang)) %>%
+#   group_by(mainreg, tkang, year) %>%
+#   summarize(area = sum(area)) %>%
+#   rename(region = mainreg, peat_type = tkang) %>%
+#   filter(!is.na(peat_type)) %>%
+#   mutate(inventory = "old") %>%
+#   mutate(region = if_else(region == 1, "south", "north")) %>%
+#   rbind(areas_aggregated)
+
+
+# 
+# if(PARAM_debug) {
+#   
+#   ggplot(areas_aggregated, aes(x = year, y = area, col = inventory)) +
+#     geom_point() +
+#     geom_path() +
+#     facet_grid(peat_type~region)
+# }
+
+
+# Save the result
+
+write.table(x = areas_aggregated, 
+            file = PATH_total_area, 
+            row.names = FALSE, 
+            quote = FALSE, 
+            col.names = TRUE, 
+            sep =" ")
+
+
+# Calculate proportional peatland areas
+
+peatland_propoprtional_areas <-
+  areas_aggregated %>% 
+  group_by(region, year) %>% 
+  mutate(proportional_area = area/ sum(area)) %>% 
+  write.table(file = PATH_peatland_proportional_area, 
+              row.names = FALSE, 
+              quote = FALSE, 
+              col.names = TRUE, 
+              sep =" ")

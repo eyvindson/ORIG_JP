@@ -24,48 +24,6 @@ bm_conv <- data.frame(component = 1:7,
                                  "Dead brances",
                                  "Stumps",
                                  "Roots"))
-
-# Select only the values we need
-
-# biomass_crop <- 
-#   BM_interp_long %>% 
-#   group_by(region, tkg, component, year) %>% 
-#   summarize(bm = sum(bm)) %>% 
-#   ungroup() %>% 
-#   rename(peat_type = tkg) %>% 
-#   mutate(region = ifelse(region == 1, "south", "north")) %>% 
-#   right_join(CONST_peat_lookup) %>% 
-#   right_join(bm_conv) %>% 
-#   filter(year %in% c(1990, 2000, 2010, 2016)) %>% 
-#   select(-peat_type, -component)
-
-
-# biomass_table <- FUNC_regionify(biomass_crop, peatnaming = TRUE)
-
-# #write.table(bm_table_wide, "wide_bm.csv", quote = FALSE, dec = ",", sep = ";")
-# 
-# ggplot(biomass_table, aes(x = year, y = bm, group = region)) +
-#   geom_col(aes(fill= region), position = "dodge") +
-#   geom_text(aes(
-#             label = round(bm,1)), 
-#             size = 3,
-#             vjust = -0.3,
-#             # hjust = 0.2,
-#             color="black",
-#             position = position_dodge(6.5)) +  
-#   facet_grid(bmtype~peat_name) +
-#   labs(fill="") +
-#   ylim(0,max(biomass_table$bm+5)) +
-#   xlab("Year") +
-#   ylab(bquote("Biomass (t kg "~ ha^-2~ ")")) +
-#   theme_bw() +
-#   theme(strip.background = element_rect(fill="white"),
-#         legend.position = "bottom") 
-
-
-
-################################################################################# 
-
 # Calculate litter production
 
 litter_types <-
@@ -92,12 +50,6 @@ alive_litter <-
   summarize(litter = sum(litter)) %>%
   # designate these as alive
   mutate(mortality = "alive")
-
-
-# alive_litter_mod <-
-#   alive_litter %>% 
-#   group_by(region, year, litter_type, ground) %>% 
-#   summarize(bm = mean(sum))
 
 #####################################################################################
 
@@ -167,7 +119,7 @@ if(PARAM_scenario %in% c(1,3)) {
 }
 
   write.table(x = lognat_litter,
-              file = "Work/dead_litter_2.csv",
+              file = "Input/Figuredata/dead_litter_2.csv",
               row.names = FALSE,
               quote = FALSE,
               col.names = TRUE,
@@ -214,47 +166,3 @@ write.table(x = dead_litter,
             quote = FALSE, 
             col.names = TRUE, 
             sep =" ")
-
-
-# THESE ARE COMMENTED OUT BUT LEFT IN CASE AWEN CALCULATIONS ARE NEEDED AT SOME POINT
-# # Calculate the awen fractions
-# litter_awen <-
-#   litter_types %>% 
-#   # First define awen params to be used
-#   right_join(LOOKUP_awentype) %>% 
-#   # include the awen fraction parameters
-#   right_join(LOOKUP_awen_params) %>% 
-#   # Calculate the awen partitions (in place operation)
-#   mutate(A = A * litter, 
-#          W = W * litter, 
-#          E = E * litter, 
-#          N = N * litter) %>% 
-#   select(-litter, -awentype)
-# 
-# # Summarizing into Fine woody litter and Non-woody litter and categorizing 
-# # into above and below ground
-# 
-# litter_categories <-
-#   litter_awen %>% 
-#   # Leaving out dead branches in order to avoid double counting
-#   filter(component != 5) %>% 
-#   mutate(ground = ifelse(component == 7, "below", "above")) %>% 
-#   group_by(region, year, tkg, litter_type, ground) %>% 
-#   # Sum up the components
-#   summarize(A = sum(A), 
-#             W = sum(W), 
-#             E = sum(E),
-#             N = sum(N))
-#   # Sum up total awen
-#   mutate(awensum = A+W+E+N,
-#          mortality = "alive")
-
-  
-GHGI_litter <-
-  lognat_litter %>% 
-  group_by(region, year, ground) %>% 
-  summarize(litter_production = sum(litter))
-  
-  
-  listfill %>%
-  filter(soil == "org", year > 1989)

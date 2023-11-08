@@ -1,6 +1,5 @@
 # This script deals with the decomposition of peat
 # It requires weather and basal area data 
-# Based on 
 
 rm(list=ls())
 

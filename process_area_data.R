@@ -29,41 +29,6 @@ areas_aggregated <-
   summarize(area = sum(area)) %>%
   rename(peat_type = tkang) %>%
   filter(!is.na(peat_type)) 
-# %>%
-#   mutate(inventory = "new")
-
-
-
-# 
-# all_areas_old <- read.csv("C:/Users/03180980/luke-peatland/Input/lulucf_rem_kptyy_tkang_ojlk.csv", sep="", dec = ".")
-# areas_long_old <- FUNC_longify(all_areas_old, value_name = "area")
-# 
-# 
-# areas_aggregated_old <-
-#   areas_long_old %>%
-#   filter(soil == 2, tkang %in% c(1:7)) %>%
-#   right_join(regsum) %>%
-#   # Combine forest peatland types 2&3 and 4&4
-#   mutate(tkang = ifelse(tkang == 3, 2, tkang),
-#          tkang = ifelse(tkang == 5, 4, tkang)) %>%
-#   group_by(mainreg, tkang, year) %>%
-#   summarize(area = sum(area)) %>%
-#   rename(region = mainreg, peat_type = tkang) %>%
-#   filter(!is.na(peat_type)) %>%
-#   mutate(inventory = "old") %>%
-#   mutate(region = if_else(region == 1, "south", "north")) %>%
-#   rbind(areas_aggregated)
-
-
-# 
-# if(PARAM_debug) {
-#   
-#   ggplot(areas_aggregated, aes(x = year, y = area, col = inventory)) +
-#     geom_point() +
-#     geom_path() +
-#     facet_grid(peat_type~region)
-# }
-
 
 # Save the result
 

@@ -75,39 +75,6 @@ NFI_weather <-
   rename(region = mainregion) %>% 
   select(-avg_T)
 
-# YASSO weather here
-
-y_old <-
-  yasso_weather_old %>% 
-  pivot_longer(cols = sum_P:ampli_T) %>% 
-  mutate(age = "old")
-
-
-YASSO_weather <-
-  NFI12_plots %>% 
-  filter(forest == 1, drpeat == 1) %>% 
-  select(region, lohko = cluster, koeala = plot, area, peat_type, weight = area) %>% 
-  left_join(NFI_coords) %>% 
-  left_join(full_weatherdata) %>% 
-  mutate(mainregion = if_else(region %in% c(1,2), 1, 2)) %>% 
-  group_by(lohko, year) %>% 
-  mutate(sum_P = sum(prec),
-         ampli_T = (max(temp_avg) - min(temp_avg)) /2) %>% 
-  ungroup() %>% 
-  group_by(mainregion, year) %>% 
-  summarize(sum_P = weighted.mean(sum_P, w = weight),
-            avg_T = weighted.mean(temp_avg, w = weight),
-            ampli_T = weighted.mean(ampli_T, w = weight)) %>% 
-  pivot_longer(cols = sum_P:ampli_T) %>% 
-  mutate(age = "new") %>% 
-  rename(region = mainregion) %>% 
-  rbind(y_old)
-
-ggplot(YASSO_weather, aes(x = year, y = value, col = age)) + 
-  geom_point() +
-  geom_path() +
-  facet_grid(name~region, scales = "free_y")
-
 # Save the output
 
 

@@ -6,13 +6,11 @@ source("PATHS.R")
 
 # Update weather data first. 
 
-# !TODO! käy läpi kaikki input tiedostot ja varmista että vuodet mätsää
-
 # Input data preparation
-#source(PATH_weather_script) # leave this out if new weather data is not needed
+
+source(PATH_weather_script) # leave this out if new weather data is not needed
 source(PATH_area_script)
-# Interpolate biomass and basal area
-source(PATH_ba_bm_interpolation_script)
+# Interpolate biomass and basal areaa
 source(PATH_biomass_to_litter_script)
 
 ## Here starts the actual main calculation ## 
@@ -35,3 +33,4 @@ source(PATH_total_script)
 # Finally calculate figures used for publication. Placed in /Figures/Publication
 
 #source("PLOTS.R")
+

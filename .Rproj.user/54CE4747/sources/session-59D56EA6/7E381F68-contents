@@ -1,0 +1,221 @@
+rm(list=ls())
+
+source("PATHS.R")
+source("FUNCTIONS.R")
+source("CONSTANTS.R")
+
+library(sf)
+
+# pinta-ala / counttia 
+
+# Etelä-Suomi 1 ccount = 358.7 ha
+# Pohjois-Suomi 1 count = 494.4 ha
+
+vmi12_pisteet <- read.csv("C:/Users/03180980/luke-peatland/Work/vmi12_pisteet.csv")
+
+
+nfi12plots <- read.table(
+  'work/NFI12PLOTS',
+  col.names=c('region','cluster','plot','stand','centre','area','forest','drpeat','peat_type'),
+  na.strings='.'
+)
+
+theme_Publication <- function(base_size=12) {
+  library(ggthemes)
+  (theme_foundation(base_size=base_size)
+    + theme(plot.title = element_text(face = "bold",
+                                      size = rel(1.2), hjust = 0.5),
+            text = element_text(),
+            panel.background = element_rect(colour = NA),
+            plot.background = element_rect(colour = NA),
+            axis.title.y = element_text(angle=90,vjust =2),
+            axis.title.x = element_text(vjust = -0.2),
+            axis.text = element_text(), 
+            axis.line = element_line(colour="black"),
+            axis.ticks = element_line(),
+            panel.grid.major=element_blank(),
+            panel.grid.minor=element_blank(),
+            panel.spacing = unit(0.5, "cm"),
+            legend.key = element_rect(colour = NA),
+            #legend.position = "bottom",
+            #legend.direction = "horizontal",
+            # legend.key.size= unit(0.01, "cm"),
+            legend.spacing = unit(0, "cm"),
+            #legend.box.spacing = unit(0, "cm"),
+            legend.title = element_text(face="italic"),
+            strip.background=element_blank(),
+            strip.text = element_text(face="bold")
+    ))
+  
+}
+
+scale_fill_Publication <- function(...){
+  library(scales)
+  discrete_scale("fill","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+  
+}
+
+scale_colour_Publication <- function(...){
+  library(scales)
+  discrete_scale("colour","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+  
+}
+
+customcols <- brewer.pal(n = 6, name = 'YlOrRd')[2:6]
+
+
+
+vmi_coords <-
+  vmi12_pisteet %>% 
+  dplyr::select(lohko, koeala, xgps, ygps) %>% 
+  rename(cluster = lohko,
+         plot = koeala,
+         x = xgps,
+         y = ygps)
+
+#kunnat = get_municipalities()
+
+suomi <- read_sf("work/suomi.shp", crs = 3067)
+ete <- read_sf("work/ete.shp", crs = 2393)
+poh <- read_sf("work/poh.shp", crs = 2393)
+poh_koko <- read_sf("work/poh_koko.shp", crs = 2393)
+
+poh_cut <- st_difference(poh_koko,poh)
+
+suomigrid <- st_make_grid(suomi, cellsize =  20000, what = "polygons")
+suomigrid <- st_as_sf(suomigrid)
+
+# suomigrid$x <- st_transform(st_crs(suomigrid$x), st_crs(ete$geometry))
+
+kaikkipisteet <- data.frame()
+
+for (i in c(1,2,4,6,7)) {
+
+  hik <-   
+    nfi12plots %>% 
+    filter(forest == 1, drpeat == 1, peat_type == i) %>% 
+    select(region, cluster, plot, peat_type) %>% 
+    left_join(vmi_coords) %>% 
+    filter(!is.na(x), !is.na(y)) %>% 
+    mutate(st_as_sf(data.frame(x,y), coords = c("x", "y"), crs = 2393)) %>% 
+    mutate(geometry = st_transform(geometry, st_crs(suomi))) %>% 
+    #mutate(region = if_else(st_intersection(geometry, ete), "ete", "poh")) %>% 
+    select(peat_type, geometry) 
+  
+  kaikkipisteet <- rbind(kaikkipisteet, hik)
+}
+
+
+
+# Leikataan ylimääräiset
+suomigrid <- st_intersection(suomigrid, suomi)
+
+kokogrid  <- data.frame()
+
+
+for (i in c(1,2,4,6,7)) {
+ 
+  yksityyppi <-
+    kaikkipisteet %>%
+    filter(peat_type == i)
+
+  pergrid <-
+    suomigrid %>%
+    mutate(counts = lengths(st_intersects(x, yksityyppi$geometry)),
+           peat_type = i)
+
+  
+  kokogrid <- rbind(kokogrid, pergrid)
+  
+}
+
+
+ete$geometry <- st_transform(ete$geometry, st_crs(kaikkipisteet$geometry))
+poh$geometry <- st_transform(poh$geometry, st_crs(kaikkipisteet$geometry))
+
+
+# as.numeric(st_intersects(st_centroid(kokogrid$x[100]), poh$geometry, sparse = TRUE))
+
+geoadj <- 1.497524
+
+
+kokogrid_final <-
+  kokogrid %>% 
+  mutate(region = if_else(is.na(as.integer(st_intersects(st_centroid(x), ete$geometry, sparse = TRUE))), 
+                  "poh", 
+                  "ete")) %>% 
+  # group_by(region) %>%
+  # mutate(totcount = sum(counts)) %>%
+  # ungroup() %>% 
+  # mutate(totarea = if_else(region == "ete",
+  #          (counts/totcount) * 2239,
+  #          (counts/totcount) * 2062))
+  mutate(area = ifelse(region == "poh",
+                          (counts * 494.4)/1000,
+                          (counts * 358.7)/1000))
+
+
+# Leikataan kokoon
+
+#kokogrid <- st_intersection(kokogrid, suomi)
+
+
+kokogrid_final$peat_type <- factor(kokogrid$peat_type , 
+                                     levels = CONST_peat_lookup$peat_type,
+                                     labels = CONST_peat_lookup$peat_name)
+
+
+
+kokogrid_final$bin <- cut(kokogrid_final$area, breaks = seq(0,20,2), include.lowest=T)
+
+
+#Piirretään kuvaaja
+ggplot() +
+  geom_sf(data = kokogrid_final, aes(fill = area), colour = NA) +
+  #geom_sf(data = ete, color = "black", fill = NA, size = 1) +
+  geom_sf(data = poh_cut, color = "black", fill = NA, size = 1) +
+  geom_sf(data = poh_koko, color = "black", fill = NA, size = 1) +
+  facet_grid(~as.factor(peat_type)) +
+  # scale_fill_gradient(low="white", high="black") +
+   scale_fill_gradient2(low="LightYellow", mid="Orange", high="Red",
+                         midpoint=9.25, limits = (c(0, 18.5))) +
+  labs(fill = "Area (kha)") +
+  #labs(fill = "") +
+  xlab("") +
+  ylab("") + 
+  # theme_few()  
+  #theme_Publication(base_size = 14) +
+  #scale_fill_(palette = "YlOrRd") + 
+  guides(fill = guides(title.position = "top")) +
+  theme_Publication() +
+  theme(axis.ticks = element_blank(), 
+        axis.text = element_blank(),
+        strip.text = element_text(face="bold", size = 14),
+        legend.position = "bottom", 
+        #legend.title.position = "top",
+        legend.margin = margin(0,0,0,0, unit = "pt"),
+        legend.key.width = unit(50, units = "pt")    
+    )
+#         
+# 
+# Shown on the map, is the frequency of NFI sampling plots per 20x20 km grid, for each FTYPE respectively.
+
+totcounts <-
+  nfi12plots %>%
+  #filter(drpeat == 1, forest == 1) %>% 
+  mutate(mainregion = if_else(region %in% c(1,2),
+                              1, 
+                              2)) %>% 
+  group_by(mainregion) %>% 
+  summarize(totcount = n())
+
+# The frequency of NFI sampling plots designated into each FTYPE respectively, over a 20x20 km grid (number of plots/grid). 
+# The values in Northern Finland have been adjusted by a factor of 1.086 (ratio of total number of NFI plots in Southern and Northern Finland, respectively) to account for the smaller total amount of NFI sampling plots. 
+# There are no NFI sampling plots in Northernmost Finland, which has hence been grayed out. Also shown on the map is the division into Southern and Northern Finland used in the calculations.
+
+# 1. Luo grid
+# 2. Laske kuinka monta kunkin suotyypin pistettä per grid
+# 3. toista jokaiselle suotyypille
+# 4. piirrä heatmap kuvaaja jokaiselle suotyypille erikseen
+
+# 

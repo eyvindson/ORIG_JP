@@ -9,16 +9,18 @@ library(forcats)
 
 CONST_dpi = 600
 
+CONST_cutoff_year <- 2021
+
 peat_decomposition <- read.table(PATH_peat_decomposition, header = TRUE) # peat degradation
 basal_area_data <- read.table(PATH_basal_area_data, header = TRUE)
 above_ground_litter <- read.table(PATH_above_ground_litter_total, header = TRUE) # above ground litter
 below_ground_litter <- read.table(PATH_below_ground_litter_total, header = TRUE) # below ground litter
 lognat_mortality <- read.table(PATH_ef_lognat_mortality, header = TRUE) # logging and natural mortality
 tree_litter_data <- read.table(PATH_total_tree_litter, header = TRUE) 
-lognat_litter <- read.table("work/dead_litter_2.csv", header = TRUE)
+lognat_litter <- read.table(paste(PATH_input, "Figuredata/dead_litter_2.csv", sep =""), header = TRUE)
 peatland_areas <- read.table(PATH_peatland_proportional_area, header = TRUE)
-GHGI_litter <- read.delim("work/GHGI_litter.txt")
-tree_uptake <- read.csv("C:/Users/03180980/luke-peatland/Work/tree_uptake.txt", sep=";")
+GHGI_litter <- read.delim(paste(PATH_input, "Figuredata/GHGI_litter.txt", sep = ""))
+tree_uptake <- read.csv(paste(PATH_input, "Figuredata/tree_uptake.txt", sep=""), header = TRUE)
 
 
 theme_Publication <- function(base_size=12) {
@@ -71,12 +73,17 @@ customcols <- brewer.pal(n = 6, name = 'YlOrRd')[2:6]
 
 # TODO Lisää sadanta, koko vuoden lämpötila, lämpötila-amplitudi (MAX-MIN ei kahdella jaettuna)
 
-yasso_saadata <- read.csv("C:/Users/03180980/luke-peatland/Work/yasso_weather.csv", sep="")
-#yasso_saadata <- yasso_saadata %>% right_join(CONST_peat_lookup)
 yasso_saadata <-
-  yasso_saadata %>% 
-  mutate(region = if_else(region == 1, "south", "north"))
-yasso_saadata <- FUNC_regionify(yasso_saadata, peatnaming = FALSE)
+  read.csv("C:/Users/03180980/luke-peatland/Work/yasso_weather.csv", sep="", dec =".") %>% 
+  mutate(region = if_else(region == 1, "south", "north")) %>% 
+  group_by(region) %>% 
+  mutate(roll_T = rollmean(avg_T, 30, align = "right", fill = NA), 
+         roll_P = rollmean(sum_P, 30, align = "right", fill = NA),
+         roll_A = rollmean(ampli_T, 30, align = "right", fill = NA)) %>% 
+  ungroup() %>% 
+  filter(year %in% c(1990:CONST_cutoff_year)) %>% 
+  select(region, year, avg_T = roll_T, sum_P = roll_P, roll_A) %>% 
+  FUNC_regionify(peatnaming = FALSE)
 
 
 
@@ -86,8 +93,8 @@ if(PARAM_scenario %in% c(2,3)) {
 yasso_saadata <-
   yasso_saadata %>%
   group_by(region) %>%
-  mutate(roll_T = first(roll_T),
-         roll_P = first(roll_P))
+  mutate(avg_T = first(avg_T),
+         sum_P = first(sum_P))
 
 }
 
@@ -96,14 +103,9 @@ yasso_saadata <-
 #   pivot_longer(cols = c(roll_T, roll_P, roll_A), names_to = "stat", values_to = "value")
 
 
-weather_data <- read.csv(PATH_weather_data_30yr_roll_avg, sep="")
+weather_data <- read.csv(PATH_weather_data_aggregated, sep="")
 weather_data <- weather_data %>% right_join(CONST_peat_lookup)
 weather_data <- FUNC_regionify(weather_data, peatnaming = TRUE)
-
-
-# weather_data$peat_type <- factor(weather_data$peat_type,
-#                                  levels = CONST_peat_lookup$peat_type,
-#                                  labels = CONST_peat_lookup$peat_name)
 
 
 basic_weather <-  ggplot(data=weather_data, aes(x = year, y = roll_T, col = peat_name)) +
@@ -114,11 +116,11 @@ basic_weather <-  ggplot(data=weather_data, aes(x = year, y = roll_T, col = peat
   facet_wrap(~region) +
   scale_y_continuous(sec.axis = sec_axis(~ . * 50, name = "Precipitation (mm)"), limits = c(8,12)) +
   theme_Publication() +
-  xlim(1990,2021) +
   scale_colour_manual(values = customcols) +
   # labs(color='Peatland forest type', shape = "Peatland forest type") +
   labs(color='', shape = "") +
-   theme(legend.position = "top",
+  xlim(1990, CONST_cutoff_year) +
+  theme(legend.position = "top",
         axis.title.y.right = element_text(color = "white"),
         axis.text.y.right = element_text(colour = "white"),
         axis.ticks.x =element_blank(),
@@ -131,9 +133,9 @@ yasso_weather <- ggplot(data=yasso_saadata, aes(x = year, y = avg_T, col = "Temp
   geom_path(aes(x = year, y = sum_P / 200, col = "Precipitation")) +
   ylab("Annual temperature (°C)") + 
   xlab("") +
-  xlim(1990,2021) +
   facet_wrap(~region) +
   scale_y_continuous(sec.axis = sec_axis(~ . * 200, name = "Precipitation (mm)"), limits = c(0,4)) +
+  #scale_y_continuous(sec.axis = sec_axis(~ . * 200, name = "Precipitation (mm)"), limits = c(0,4)) +
   scale_colour_manual(values = c("Temperature" = "Black", "Precipitation" = "Lightblue")) +
   theme_Publication() +
   facet_grid(~region) +
@@ -145,16 +147,36 @@ yasso_weather <- ggplot(data=yasso_saadata, aes(x = year, y = avg_T, col = "Temp
      legend.position = "bottom"
   )
 
+temp_amp <- ggplot(data = yasso_saadata, aes(x = year, y = roll_A)) +
+  geom_point() + 
+  geom_path() +
+  ylab("Temperature amplitude (°C)") + 
+  xlab("") +
+  facet_wrap(~region) +
+  theme_Publication() +
+  scale_y_continuous(sec.axis = sec_axis(~ . * 50, name = "Precipitation (mm)"), limits = c(11,15)) +
+  labs(color = "") +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_blank(),
+    legend.position = "none",
+    axis.title.y.right = element_text(color = "white"),
+    axis.text.y.right = element_text(colour = "white"),
+    axis.ticks.x =element_blank(),
+    axis.text.x = element_blank()
+  )
+
+         
 #figure2 <- basic_weather / yasso_weather
 
-figure2 <- ggarrange(basic_weather, yasso_weather, nrow = 2, widths = c(1,1))
+figure2 <- ggarrange(basic_weather, temp_amp, yasso_weather, nrow = 3, widths = c(1,1,1), heights = c(2,1,2), align = "v")
 figure2
 
 ggsave(figure2, 
        filename = file.path(PATH_pubfigures, "figure2.png"), 
        dpi = CONST_dpi,
        width = 6,
-       height = 7)
+       height = 10)
 
 
 write.xlsx(weather_data, file = "excel/fig2.xlsx")
@@ -166,14 +188,20 @@ write.xlsx(yasso_saadata, file = "excel/fig2_2.xlsx")
 # FIGURE 3 Basal areas
 
 
-basal_areas <- read.table(PATH_basal_area_data, header = TRUE)
+basal_areas <- 
+  read.table(PATH_basal_area_data, header = TRUE) %>% 
+  left_join(CONST_peat_lookup) %>% 
+  FUNC_regionify(peatnaming = T, peat_percentage = F)
 
-basal_areas <- basal_areas %>% right_join(CONST_peat_lookup) 
+peatland_areas_fig <- 
+  read.table(PATH_total_area, header = TRUE) %>% 
+  left_join(CONST_peat_lookup) %>% 
+  FUNC_regionify(peatnaming = T) %>% 
+  mutate(area = area / 1000)
 
-basal_areas <- FUNC_regionify(basal_areas, peatnaming = T)
 
 
-figure3 <- ggplot(data=basal_areas, aes(x = year, y = basal_area, col = peat_name)) +
+basal_fig <- ggplot(data=basal_areas, aes(x = year, y = basal_area, col = peat_name)) +
   geom_point() +
   geom_path() +
   ylab(bquote("Basal area ("~m^2~ ~ha^-1~")")) + 
@@ -182,19 +210,41 @@ figure3 <- ggplot(data=basal_areas, aes(x = year, y = basal_area, col = peat_nam
   facet_wrap(~region) +
   #ylim(0, NA) +
   labs(color="") +
+  xlim(1990, CONST_cutoff_year) +
+  theme_Publication() +
+  theme(legend.position = "none") 
+
+area_fig <- ggplot(data=peatland_areas_fig, aes(x = year, y = area, col = peat_name)) +
+  geom_point() +
+  geom_path() +
+  ylab("Total area (kha)") + 
+  xlab("") +
+  scale_colour_manual(values = customcols) +
+  facet_wrap(~region) +
+  #ylim(0, NA) +
+  labs(color="") +
+  xlim(1990, CONST_cutoff_year) +
   theme_Publication() +
   theme(legend.position = "bottom",
-        plot.margin = unit(c(0,1,0,0.5), "cm")) 
+        plot.margin = unit(c(0,1,0,0.5), "cm"),
+          strip.background = element_blank(),
+          strip.text.x = element_blank(),
+          # legend.position = c(.85, .84)
+        )
+
+figure3 <- ggarrange(basal_fig, area_fig, nrow = 2, widths = c(1,1), align = "v")
+figure3
 
 
 ggsave(figure3, filename = file.path(PATH_pubfigures, "figure3.png"), 
        dpi = CONST_dpi,
        width = 6,
-       height = 3.5)
+       height = 7)
 
 figure3
 
 write.xlsx(basal_areas, file = "excel/fig3.xlsx")
+write.xlsx(peatland_areas, file = "excel/fig3_2.xlsx")
 
 
 #######################################
@@ -225,6 +275,7 @@ fig_tot_CO2 <- ggplot(data=soil_comp, aes(x = year, y = final_CO2, col = Method)
   labs(title = "Whole country") +
   scale_fill_Publication() +
   scale_colour_Publication() +
+  xlim(1990, CONST_cutoff_year) +
   theme_Publication() +
   theme(legend.position = c(0.73, 0.85)) +
   labs(color="") 
@@ -255,6 +306,7 @@ fig_tot_CO2_reg <- ggplot(data=co2_reg, aes(x = year, y = CO2, col = method)) +
   scale_colour_Publication() +
   labs(title = "Regions") +
   theme_Publication() +
+  xlim(1990, CONST_cutoff_year) +
   labs(color="") +
   theme(legend.position = "none")
 
@@ -275,6 +327,7 @@ fig_tot_CO2_alt <- ggplot() +
   ylab(bquote("Soil" ~CO[2]~ "balance (Mt "~CO[2]~")")) +
   xlab("") +
   facet_grid(~Method) +
+  xlim(1990, CONST_cutoff_year) +
   scale_colour_manual(values = c("Southern Finland" = customcols[1],
                                  "Northern Finland" = customcols[5])) +
   #scale_fill_Publication() +
@@ -310,7 +363,7 @@ peat_decomp_new <-
   right_join(lognat_mortality) %>%
   mutate(total_peat_deg = peat_deg - lognat_mortality) %>%
   select(-peat_deg, -lognat_mortality) %>% 
-  right_join(peatland_areas) %>%
+  left_join(peatland_areas) %>%
   mutate(peat_deg = total_peat_deg * proportional_area) %>%
   group_by(region, year) %>%
   summarise(peat_deg = sum(peat_deg * -44/12)) %>% 
@@ -452,6 +505,8 @@ figure5 <- ggplot() +
   labs(fill="") +
   # scale_fill_Publication() +
   # scale_colour_Publication() +
+  xlim(1990, CONST_cutoff_year) +
+  
   scale_fill_manual(values = c("Aboveground tree litter" = customcols[1], 
                                "Belowground arboreal litter" = customcols[2], 
                                "Ground vegetation litter" = customcols[3],
@@ -527,6 +582,8 @@ figure6 <- ggplot(data=lognat_plot, aes(x = year, y = litter, fill = component))
   facet_grid(~region) +
   labs(color="Component", shape = "Component") +
   labs(fill="") +
+  xlim(1990, CONST_cutoff_year) +
+  
   scale_fill_manual(values = c("Aboveground litter" = customcols[1], 
                                "Belowground litter" = customcols[2], 
                                "Decomposition of litter" = customcols[5])) +
@@ -632,6 +689,7 @@ figure7 <- ggplot(data=total_litter_cats, aes(x = year, y = litter)) +
   geom_path(data = total_net, aes(x=year, y=net), linetype = "longdash", size = 0.8, col = "white") +
 
   # geom_path(data = TEMP_vakio, aes(x=year, y=templitter), linetype = "solid", size = 0.8, col = "blue") +
+  xlim(1990, CONST_cutoff_year) +
   
   facet_grid(region ~ peat_name) +
   labs(fill="") +
@@ -694,6 +752,8 @@ figure8 <- ggplot() +
   guides(color = guide_legend(order = 1),
          fill = guide_legend(order = 2)) +
   theme_Publication()  +
+  xlim(1990, CONST_cutoff_year) +
+  
   theme(legend.position = c(.85, .86),
         legend.margin = margin(-0.5,0,0,0, unit="cm"))
 
@@ -736,45 +796,55 @@ write.xlsx(soil_shit, file = "excel/fig8_2.xlsx")
 # 
 # herkkis_old <- openxlsx::read.xlsx("Work/herkkis.xlsx")
 #
-# herkkis_read <- data.frame()
-# 
-# for (i in 0:3) {
-# 
-#   scenario_table <-
-#     read.csv(paste(i, "total.csv", sep=""), sep=";")
-# 
-#   herkkis_read <- rbind(herkkis_read, scenario_table)
-# 
-# }
-# 
+herkkis_read <- data.frame()
+
+for (i in 0:3) {
+
+  scenario_table <-
+    read.csv(paste(i, "total.csv", sep=""), sep=";")
+
+  herkkis_read <- rbind(herkkis_read, scenario_table)
+
+}
+
+herkkis <-
+  herkkis_read
+
+herkkis$region <- factor(herkkis$region,
+                     levels = c("south", "north", "total"),
+                     labels = c("Southern Finland", "Northern Finland", "Total"))
+
+
+herkkis$scenario <- factor(herkkis$scenario,
+                         levels = c("0", "1", "2", "3"),
+                         labels = c("Default", "BA and harvest constant", "Climate constant", "BA+harvest+Climate constant"))
+
+herkkis$param <- factor(herkkis$param,
+                           levels = c("total_CO2", "lognat_CO2", "final_CO2"),
+                           labels = c("Live tree litter - decomposition", "Dead tree litter - decomposition",  "Total soil CO2"))
+
+
 # herkkis <-
-#   herkkis_read
-# 
-# herkkis$region <- factor(herkkis$region,
-#                      levels = c("south", "north", "total"),
-#                      labels = c("Southern Finland", "Northern Finland", "Total"))
-# 
-# 
-# herkkis$scenario <- factor(herkkis$scenario,
-#                          levels = c("0", "1", "2", "3"),
-#                          labels = c("Default", "BA and harvest constant", "TEMP constant", "BA+harvest+TEMP constant"))
-# 
-# herkkis$param <- factor(herkkis$param,
-#                            levels = c("total_CO2", "lognat_CO2", "final_CO2"),
-#                            labels = c("Alive tree litter - decomposition", "Dead tree litter - decomposition",  "Total soil CO2"))
-# 
-# 
-# # herkkis <-
-# #   herkkis %>%
-# #   filter(param == "Total soil CO2")
-# 
-# 
-# ggplot(herkkis, aes(x = year, y = value, col = scenario)) +
-#   geom_point() +
-#   geom_path() +
-#   xlab("") +
-#   ylab(bquote("Mt "~CO[2]~"")) +
-#     facet_grid(param ~ region, scales = "free_y") +
-#   scale_fill_Publication() +
-#   scale_colour_Publication() +
-#   theme_Publication()
+#   herkkis %>%
+#   filter(param == "Total soil CO2")
+
+
+herkkisplot <- ggplot(herkkis, aes(x = year, y = value, col = scenario, shape = scenario)) +
+  geom_point() +
+  geom_path() +
+  xlab("") +
+  ylab(bquote("Mt "~CO[2]~"")) +
+    facet_grid(param ~ region, scales = "free_y") +
+
+  theme_Publication() +
+  scale_color_manual(values = c("Default" = customcols[1],
+                               "BA and harvest constant" = customcols[2], 
+                               "Climate constant" = customcols[3], 
+                               "BA+harvest+Climate constant" = customcols[5])) +
+  theme(legend.title = element_blank())
+
+ggsave(herkkisplot, 
+       filename = file.path(PATH_pubfigures, "herkkis.png"), 
+       dpi = CONST_dpi,
+       width = 10,
+       height = 10)
